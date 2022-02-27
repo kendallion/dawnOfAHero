@@ -1,11 +1,63 @@
 <html>
 <head>
     <title>Dawn of a Hero</title>
+    <link rel="stylesheet" href="assets/style.css" />
 </head>
 
 <body>
+    <div class="graphics">
+        <table class="stats">
+            <tr style="font-size: 20px;">
+                <td><b>Population</b></td>
+                <td><b>Items</b></td>
+                <td><b>Resources</b></td>
+                <td><b>Stats</b></td>
+            </tr>
+            <tr>
+                <td>Idle Peasants: <span id="idlePeasants">0</span></td>
+                <td>Hoes: <span id="hoes">0</span></td>
+                <td>Stone: <span id="stone">0</span></td>
+                <td>Available Housing: <span id="availableHousing">0</span></td>
+            </tr>
+            <tr>
+                <td>Farmers: <span id="farmers">0</span></td>
+                <td>Picks: <span id="picks">0</span></td>
+                <td>Wood: <span id="wood">0</span></td>
+                <td>Food Production: <span id="foodProduction">0</span></td>
+            </tr>
+            <tr>
+                <td>Miners: <span id="miners">0</span></td>
+                <td>Axes: <span id="axes">0</span></td>
+                <td>Iron: <span id="iron">0</span></td>
+                <td>Food Consumption: <span id="foodConsumption">0</span></td>
+            </tr>
+            <tr>
+                <td>Woodcutters: <span id="woodcutters">0</span></td>
+                <td>Spears: <span id="spears">0</span></td>
+                <td>Vines: <span id="vines">0</span></td>
+                <td> Storage: <span id="storage">0</span>/<span id="maxStorage">0</span>
+            </tr>
+        </table>
+    </div>
 
-    <h1>A Hero Dawns!</h1>
+    <div class="side-panel">
+        <div class="logo-div">
+            <img class="logo" src="assets/DoHlogo.png">
+        </div>
 
+        <div class="content" id="content">
+            <!--<p id="content"></p>-->
+        </div>
+
+        <div class="input">
+            <form id="inputForm" onsubmit="return false;">
+                <input type="text" id="inputTextBox" class="inputTextBox" autocomplete="off" autofocus="on">
+                <input type="submit" style="display: none" onclick="processInput()">
+            </form>
+        </div>
+    </div>
+
+    <script src="src/index.js"></script>
+    <script>init()</script>
 </body>
 </html>
