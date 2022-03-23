@@ -8,9 +8,11 @@ var isWriting = false;
 const INPUTSTATE = {
     READY: 0,
     BUILDING: 1,
-    FORGING: 2
+    FORGING: 2,
+    FORGINGCOUNT: 3
 };
 var inputState;
+var forgeItem;
 
 var time;
 var day;
@@ -74,6 +76,15 @@ function init(){
     iron = 0;
     vines = 0;
     hoes = 0;
+
+    blacksmith = 0;
+    barracks = 0;
+    farm = 1;
+    smallHouse = 1;
+    largeHouse = 2;
+    stable = 0;
+    stockpile = 1;
+    market = 0;
     //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
 }
 
@@ -86,6 +97,11 @@ function processInput(){
     }
     if(inputState == INPUTSTATE.FORGING) {
         processForging();
+        return;
+    }
+
+    if(inputState == INPUTSTATE.FORGINGCOUNT) {
+        processForgingCount();
         return;
     }
 
@@ -106,7 +122,7 @@ function processInput(){
         case 'W':
             goWoodCutting();
             break;
-        case 't':
+        case 't': //only for debug
             time += 1;
             updateResources();
             break;
@@ -152,7 +168,7 @@ function goMining(){
         return;
     }
     var stoneGet = Math.floor(Math.random() * 13 + 10);
-    var ironGet = Math.floor(Math.random() * 11 - 4)
+    var ironGet = Math.floor(Math.random() * 11 - 5)
     if (ironGet > 0) {
         write("You got " + stoneGet + " stone and " + ironGet + " iron from mining.");
         iron += ironGet;
@@ -203,7 +219,35 @@ function processBuilding(){
             write("I can help!");
             break;
         case 'b':
-            write("Let's pretend we built a blacksmith!^^What would you like to do next?");
+            if(wood < 50 || stone < 75 || iron < 5){
+                write("You do not have enough resources to upgrade your barracks. It costs 50 wood, 75 stone, and 5 iron.^^What would you like to build?");
+                break;
+            }
+            wood -= 50;
+            stone -= 75;
+            iron -= 5;
+            blacksmith += 1;
+            time += 4;
+            updateResources();
+            write("You have upgraded your blacksmith.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
+        case 'a':
+            if(wood < 75 || stone < 50 || iron < 5){
+                write("You do not have enough resources to upgrade your barracks. It costs 50 wood, 75 stone, and 5 iron.^^What would you like to build?");
+                break;
+            }
+            wood -= 75;
+            stone -= 50;
+            iron -= 5;
+            barracks += 1;
+            time += 4;
+            updateResources();
+            write("You have upgraded your barracks.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
+        case 'c':
+            write("Cancelled build.^^What would you like to do next?");
             inputState = INPUTSTATE.READY;
             break;
         default:
@@ -228,13 +272,32 @@ function processForging(){
             write("I can help!");
             break;
         case 'o':
-            write("Let's pretend we forged a hoe!^^What would you like to do next?");
-            hoes += 1;
-            updateResources();
-            inputState = INPUTSTATE.READY;
+            write("How many hoes would you like to forge?");
+            forgeItem = 'o';
+            inputState = INPUTSTATE.FORGINGCOUNT;
             break;
         default:
             write("Not a valid forge. Please try again.");
+            break;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
+
+function processForgingCount(){
+    var count = document.getElementById('inputTextBox').value;
+    if(isNaN(count)){
+        write("Please input a number.");
+        return;
+    }
+    switch(forgeItem){
+        case 'o':
+            hoes += parseInt(count);
+            updateResources();
+            write("You have forged " + count + " hoes.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
+        default:
+            write("Not a valid number.");
             break;
     }
     document.getElementById('inputTextBox').value = "";
