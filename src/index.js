@@ -12,7 +12,17 @@ const INPUTSTATE = {
     FORGINGCOUNT: 3
 };
 var inputState;
-var forgeItem;
+//var forgeItem;
+var forgeItem = {
+    name: null,
+    code: null,
+    woodCost: null,
+    stoneCost: null,
+    ironCost: null,
+    vineCost: null,
+    forgeTime: null,
+    forgeLevel: null
+};
 
 var time;
 var day;
@@ -77,7 +87,7 @@ function init(){
     vines = 0;
     hoes = 0;
 
-    blacksmith = 0;
+    blacksmith = 1; //should be 0 for game
     barracks = 0;
     farm = 1;
     smallHouse = 1;
@@ -108,7 +118,7 @@ function processInput(){
     switch(document.getElementById('inputTextBox').value) {
         case 'h':
         case 'H':
-            write("Yeah, you look like you'd need help.");
+            giveHelp();
             break;
         case 'p':
             idlePeasants += 1;
@@ -151,7 +161,7 @@ function updateResources(){
     document.getElementById('iron').textContent = iron;
     document.getElementById('hoes').textContent = hoes;
 
-    document.getElementsByClassName('day').textContent = day;
+    document.getElementById('day').textContent = day;
     var timeSpan = document.getElementById('time');
     timeSpan.textContent = '';
     var hour = Math.floor(time / 4);
@@ -160,6 +170,10 @@ function updateResources(){
     if (time < 24) timeSpan.textContent = hour + 6 + ":" + minute + " am";
     else if (23 < time  && time < 28) timeSpan.textContent = hour + 6 + ":" + minute + " PM";
     else timeSpan.textContent = hour - 6 + ":" + minute + " PM";
+}
+
+function giveHelp(){
+    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Sell supplies^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^r: Throw out items^n: Manage carts");
 }
 
 function goMining(){
@@ -262,6 +276,10 @@ function forge(){
         write("It's too late to forge anything right now.");
         return;
     }
+    if(blacksmith == 0) {
+        write("You must build a blacksmith before you can forge weapons and tools.");
+        return;
+    }
     write("What would you like to forge?^O: Hoe^P: Pick^H: Help^C: Cancel");
     inputState = INPUTSTATE.FORGING;
 }
@@ -273,27 +291,49 @@ function processForging(){
             break;
         case 'o':
             write("How many hoes would you like to forge?");
-            forgeItem = 'o';
+            forgeItem = {
+                name: "hoes",
+                code: "o",
+                woodCount: 1,
+                stoneCount: 0,
+                ironCount: 1,
+                vineCount: 0,
+                forgeTime: 1,
+                forgeLevel: 1,
+                currentItemCount: hoes
+            };
+            inputState = INPUTSTATE.FORGINGCOUNT;
+            break;
+        case 'p':
+            write("How many picks would you like to forge?");
+            forgeItem = 'p';
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
         default:
-            write("Not a valid forge. Please try again.");
+            write("Not a valid choice. Please try again.");
             break;
     }
     document.getElementById('inputTextBox').value = "";
 }
 
 function processForgingCount(){
-    var count = document.getElementById('inputTextBox').value;
+    var count = parseInt(document.getElementById('inputTextBox').value);
     if(isNaN(count)){
         write("Please input a number.");
         return;
     }
-    switch(forgeItem){
+
+    switch(forgeItem.code){
         case 'o':
-            hoes += parseInt(count);
+            hoes += count;
             updateResources();
-            write("You have forged " + count + " hoes.^^What would you like to do next?");
+            write("You have forged " + pluralize(count,"hoe") + ".^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
+        case 'p':
+            hoes += count;
+            updateResources();
+            write("You have forged " + pluralize(count,"hoe") + ".^^What would you like to do next?");
             inputState = INPUTSTATE.READY;
             break;
         default:
@@ -302,3 +342,28 @@ function processForgingCount(){
     }
     document.getElementById('inputTextBox').value = "";
 }
+
+
+
+/*
+object forgeItem:
+name: hoe
+code: o
+woodCost: 1
+stoneCost: 0
+ironCost: 1
+vineCost: 0
+goldCost: 0
+forgeTime: 1
+forgeLevel: 1
+
+object TrainItem:
+name: farmer
+code: f
+neededItem: o
+goldCost: 0
+trainTime: 1
+barracksLevel: 1
+
+
+*/
