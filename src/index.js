@@ -46,6 +46,11 @@ var stable;
 var stockpile;
 var market;
 
+var resources ={
+    stone: 10,
+    hoes: 0
+};
+
 const pluralize = (count, noun, suffix = 's') =>
   `${count} ${noun}${count !== 1 ? suffix : ''}`;
 
@@ -81,10 +86,10 @@ function init(){
     time = 0;
     day = 1;
     idlePeasants = 0;
-    stone = 0;
-    wood = 0;
-    iron = 0;
-    vines = 0;
+    stone = 5;
+    wood = 8;
+    iron = 4;
+    vines = 7;
     hoes = 0;
 
     blacksmith = 1; //should be 0 for game
@@ -292,21 +297,29 @@ function processForging(){
         case 'o':
             write("How many hoes would you like to forge?");
             forgeItem = {
-                name: "hoes",
-                code: "o",
-                woodCount: 1,
-                stoneCount: 0,
-                ironCount: 1,
-                vineCount: 0,
+                name: "hoe",
+                variable: "hoes",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 1,
+                vineCost: 0,
                 forgeTime: 1,
                 forgeLevel: 1,
-                currentItemCount: hoes
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
         case 'p':
             write("How many picks would you like to forge?");
-            forgeItem = 'p';
+            forgeItem = {
+                name: "pick",
+                variable: "picks",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 1,
+                vineCost: 0,
+                forgeTime: 1,
+                forgeLevel: 1,
+            };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
         default:
@@ -317,52 +330,78 @@ function processForging(){
 }
 
 function processForgingCount(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled forge.^^What would you like to do next?")
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
     var count = parseInt(document.getElementById('inputTextBox').value);
+    var canForge = true;
+    var forgeError = "";
     if(isNaN(count)){
         write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
         return;
     }
 
-    switch(forgeItem.code){
-        case 'o':
-            hoes += count;
-            updateResources();
-            write("You have forged " + pluralize(count,"hoe") + ".^^What would you like to do next?");
-            inputState = INPUTSTATE.READY;
-            break;
-        case 'p':
-            hoes += count;
-            updateResources();
-            write("You have forged " + pluralize(count,"hoe") + ".^^What would you like to do next?");
-            inputState = INPUTSTATE.READY;
-            break;
-        default:
-            write("Not a valid number.");
-            break;
+    if(blacksmith < forgeItem.forgeLevel){
+        write("You must upgrade your blacksmith to forge " + pluralize(2, forgeItem.name) + ".^Current blacksmith level: " + blacksmith + "^Required blacksmith level: " + forgeItem.forgeLevel + "^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(time + forgeItem.forgeTime * count > 64){
+        write("You don't have enough time to forge " + pluralize(count, forgeItem.name) + ".^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(stone < forgeItem.stoneCost * count){
+        forgeError += "Not enough stone.^Required: " + forgeItem.stoneCost * count + "^Curent: " + stone + "^^";
+        canForge = false;
+    }
+
+    if(wood < forgeItem.woodCost * count){
+        forgeError += "Not enough wood.^Required: " + forgeItem.woodCost * count + "^Current: " + stone + "^^";
+        canForge = false;
+    }
+
+    if(iron < forgeItem.ironCost * count){
+        forgeError += "Not enough iron.^Required: " + forgeItem.ironCost * count + "^Current: " + iron + "^^";
+        canForge = false;
+    }
+
+    if(vines < forgeItem.vineCost * count){
+        forgeError += "Not enough iron.^Required: " + forgeItem.ironCost * count + "^Current: " + iron + "^^";
+        canForge = false;
+    }
+
+    if(canForge){
+        stone -= forgeItem.stoneCost * count;
+        wood -= forgeItem.woodCost * count;
+        iron -= forgeItem.ironCost * count;
+        vines -= forgeItem.vineCost * count;
+        window[forgeItem.variable] += count;
+        updateResources();
+        write("You have forged " + pluralize(count, forgeItem.name) + ".^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+    }
+    else{
+        write(forgeError + "What would you like to do next?");
+        inputState = INPUTSTATE.READY;
     }
     document.getElementById('inputTextBox').value = "";
 }
-
-
-
 /*
-object forgeItem:
-name: hoe
-code: o
-woodCost: 1
-stoneCost: 0
-ironCost: 1
-vineCost: 0
-goldCost: 0
-forgeTime: 1
-forgeLevel: 1
-
 object TrainItem:
-name: farmer
-code: f
-neededItem: o
-goldCost: 0
-trainTime: 1
+name: farmer,
+variable: farmers,
+neededItemVariable: hoes,
+goldCost: 0,
+trainTime: 1,
 barracksLevel: 1
 
 
