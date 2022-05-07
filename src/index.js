@@ -9,7 +9,9 @@ const INPUTSTATE = {
     READY: 0,
     BUILDING: 1,
     FORGING: 2,
-    FORGINGCOUNT: 3
+    FORGINGCOUNT: 3,
+    TRAINING: 4,
+    TRAININGCOUNT: 5
 };
 var inputState;
 //var forgeItem;
@@ -24,6 +26,15 @@ var forgeItem = {
     forgeLevel: null
 };
 
+var TrainItem = {
+    name: null,
+    variable: null,
+    neededItemVariable: null,
+    goldCost: null,
+    trainTime: null,
+    barracksLevel: null
+}
+
 var time;
 var day;
 
@@ -32,9 +43,11 @@ var stone;
 var wood;
 var iron;
 var vines;
+var gold;
 
 //population
 var idlePeasants;
+var farmers;
 
 //buildings
 var blacksmith;
@@ -46,10 +59,28 @@ var stable;
 var stockpile;
 var market;
 
-var resources ={
-    stone: 10,
-    hoes: 0
-};
+function updateResources(){
+    document.getElementById('stone').textContent = stone;
+    document.getElementById('wood').textContent = wood;
+    document.getElementById('vines').textContent = vines;
+    document.getElementById('iron').textContent = iron;
+    document.getElementById('gold').textContent = gold;
+
+document.getElementById('idlePeasants').textContent = idlePeasants;
+    document.getElementById('farmers').textContent = farmers;
+
+    document.getElementById('hoes').textContent = hoes;
+
+    document.getElementById('day').textContent = day;
+    var timeSpan = document.getElementById('time');
+    timeSpan.textContent = '';
+    var hour = Math.floor(time / 4);
+    var minute = time % 4 * 15;
+    if (minute == 0) minute = "00";
+    if (time < 24) timeSpan.textContent = hour + 6 + ":" + minute + " am";
+    else if (23 < time  && time < 28) timeSpan.textContent = hour + 6 + ":" + minute + " PM";
+    else timeSpan.textContent = hour - 6 + ":" + minute + " PM";
+}
 
 const pluralize = (count, noun, suffix = 's') =>
   `${count} ${noun}${count !== 1 ? suffix : ''}`;
@@ -85,21 +116,28 @@ function init(){
     inputState = INPUTSTATE.READY;
     time = 0;
     day = 1;
-    idlePeasants = 0;
+
     stone = 5;
     wood = 8;
     iron = 4;
     vines = 7;
+    gold = 10;
+
+    idlePeasants = 4;
+    farmers = 0;
+
     hoes = 0;
 
     blacksmith = 1; //should be 0 for game
-    barracks = 0;
+    barracks = 1; //should be 0 for game
     farm = 1;
     smallHouse = 1;
     largeHouse = 2;
     stable = 0;
     stockpile = 1;
     market = 0;
+
+    updateResources();
     //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
 }
 
@@ -120,6 +158,16 @@ function processInput(){
         return;
     }
 
+    if(inputState == INPUTSTATE.TRAINING) {
+        processTraining();
+        return;
+    }
+
+    if(inputState == INPUTSTATE.TRAININGCOUNT) {
+        processTrainingCount();
+        return;
+    }
+
     switch(document.getElementById('inputTextBox').value) {
         case 'h':
         case 'H':
@@ -137,9 +185,8 @@ function processInput(){
         case 'W':
             goWoodCutting();
             break;
-        case 't': //only for debug
-            time += 1;
-            updateResources();
+        case 't':
+            train();
             break;
         case 's':
         case 'S':
@@ -157,24 +204,6 @@ function processInput(){
             write("Not a valid input!");
     }
     document.getElementById('inputTextBox').value = "";
-}
-
-function updateResources(){
-    document.getElementById('stone').textContent = stone;
-    document.getElementById('wood').textContent = wood;
-    document.getElementById('vines').textContent = vines;
-    document.getElementById('iron').textContent = iron;
-    document.getElementById('hoes').textContent = hoes;
-
-    document.getElementById('day').textContent = day;
-    var timeSpan = document.getElementById('time');
-    timeSpan.textContent = '';
-    var hour = Math.floor(time / 4);
-    var minute = time % 4 * 15;
-    if (minute == 0) minute = "00";
-    if (time < 24) timeSpan.textContent = hour + 6 + ":" + minute + " am";
-    else if (23 < time  && time < 28) timeSpan.textContent = hour + 6 + ":" + minute + " PM";
-    else timeSpan.textContent = hour - 6 + ":" + minute + " PM";
 }
 
 function giveHelp(){
@@ -278,14 +307,14 @@ function processBuilding(){
 
 function forge(){
     if (time > 63) {
-        write("It's too late to forge anything right now.");
+        write("It's too late to forge anything right now.^^What would you like to do next?");
         return;
     }
     if(blacksmith == 0) {
-        write("You must build a blacksmith before you can forge weapons and tools.");
+        write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
-    write("What would you like to forge?^O: Hoe^P: Pick^H: Help^C: Cancel");
+    write("What would you like to forge?^o: Hoe^p: Pick^h: Help^c: Cancel");
     inputState = INPUTSTATE.FORGING;
 }
 
@@ -304,7 +333,7 @@ function processForging(){
                 ironCost: 1,
                 vineCost: 0,
                 forgeTime: 1,
-                forgeLevel: 1,
+                forgeLevel: 1
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
@@ -318,7 +347,7 @@ function processForging(){
                 ironCost: 1,
                 vineCost: 0,
                 forgeTime: 1,
-                forgeLevel: 1,
+                forgeLevel: 1
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
@@ -346,7 +375,7 @@ function processForgingCount(){
     }
 
     if(blacksmith < forgeItem.forgeLevel){
-        write("You must upgrade your blacksmith to forge " + pluralize(2, forgeItem.name) + ".^Current blacksmith level: " + blacksmith + "^Required blacksmith level: " + forgeItem.forgeLevel + "^^What would you like to do next?");
+        write("You must upgrade your blacksmith to forge " + forgeItem.variable + ".^Current level: " + blacksmith + "^Required level: " + forgeItem.forgeLevel + "^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
         document.getElementById('inputTextBox').value = "";
         return;
@@ -395,14 +424,117 @@ function processForgingCount(){
     }
     document.getElementById('inputTextBox').value = "";
 }
-/*
-object TrainItem:
-name: farmer,
-variable: farmers,
-neededItemVariable: hoes,
-goldCost: 0,
-trainTime: 1,
-barracksLevel: 1
 
+function train(){
+    if (time > 63) {
+        write("It's too late to train troops or workers right now.^^What would you like to do next?");
+        return;
+    }
+    if(barracks == 0) {
+        write("You must build a barracks before you can train troops or workers.^^What would you like to do next?");
+        return;
+    }
+    if(idlePeasants == 0) {
+        write("You do not have any idle peasants that can be trained.^^What would you like to do next?");
+        return;
+    }
+    write("What would you like to train?^f: Farmer^m: Miner^h: Help^c: Cancel");
+    inputState = INPUTSTATE.TRAINING;
+}
 
-*/
+function processTraining(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 'h':
+            write("I can help!");
+            break;
+        case 'f':
+            write("How many farmers would you like to train?");
+            trainItem = {
+                name: "farmer",
+                variable: "farmers",
+                neededItemVariable: "hoes",
+                goldCost: 1,
+                trainTime: 1,
+                barracksLevel: 1
+            };
+            inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        case 'm':
+            write("How many miners would you like to train?");
+            trainItem = {
+                name: "miner",
+                variable: "miners",
+                neededItemVariable: "picks",
+                goldCost: 1,
+                trainTime: 1,
+                barracksLevel: 1
+            };
+            inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        default:
+            write("Not a valid choice. Please try again.");
+            break;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
+
+function processTrainingCount(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled training.^^What would you like to do next?")
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var count = parseInt(document.getElementById('inputTextBox').value);
+    var canTrain = true;
+    var trainError = "";
+    if(isNaN(count)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(barracks < trainItem.barracksLevel){
+        write("You must upgrade your barracks to train " + trainItem.variable + ".^Current level: " + barracks + "^Required level: " + trainItem.barracksLevel + "^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(time + trainItem.trainTime * count > 64){
+        write("You don't have enough time to train " + pluralize(count, trainItem.name) + ".^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(gold < trainItem.goldCost * count){
+        trainError += "Not enough gold.^Required: " + trainItem.goldCost * count + "^Curent: " + gold + "^^";
+        canTrain = false;
+    }
+
+    if(idlePeasants < count){
+        trainError += "Not enough idle peasants to train.^Required: " + count + "^Curent: " + idlePeasants + "^^";
+        canTrain = false;
+    }
+
+    if(count > window[trainItem.neededItemVariable]) {
+        trainError += "Not enough " + trainItem.neededItemVariable + ".^Required: " + count + "^Current: " + window[trainItem.neededItemVariable] + "^^";
+        canTrain = false;
+    }
+
+    if(canTrain){
+        gold -= trainItem.goldCost * count;
+        window[trainItem.neededItemVariable] -= count;
+        idlePeasants -= count;
+        window[trainItem.variable] += count;
+        updateResources();
+        write("You have trained " + pluralize(count, trainItem.name) + ".^^What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+    }
+    else{
+        write(trainError + "What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
