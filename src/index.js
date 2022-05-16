@@ -44,13 +44,18 @@ var wood;
 var iron;
 var vines;
 var gold;
+var food;
+
+var foodProduction;
 
 //population
+var population;
 var idlePeasants;
 var farmers;
+var miners;
 
 //buildings
-var blacksmith;
+var blacksmithLevel;
 var barracks;
 var farm;
 var smallHouse;
@@ -60,16 +65,25 @@ var stockpile;
 var market;
 
 function updateResources(){
+    population = idlePeasants + farmers + miners;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
     document.getElementById('vines').textContent = vines;
     document.getElementById('iron').textContent = iron;
     document.getElementById('gold').textContent = gold;
+    document.getElementById('food').textContent = food;
 
-document.getElementById('idlePeasants').textContent = idlePeasants;
+    document.getElementById('idlePeasants').textContent = idlePeasants;
     document.getElementById('farmers').textContent = farmers;
+    document.getElementById('miners').textContent = miners;
 
     document.getElementById('hoes').textContent = hoes;
+
+    document.getElementById('availableHousing').textContent = (smallHouse * 5 + largeHouse * 10);
+    document.getElementById('population').textContent = population;
+
+    document.getElementById('foodProduction').textContent = farmers;
+    document.getElementById('foodConsumption').textContent = Math.floor(population / 5);
 
     document.getElementById('day').textContent = day;
     var timeSpan = document.getElementById('time');
@@ -122,14 +136,16 @@ function init(){
     iron = 4;
     vines = 7;
     gold = 10;
+    food = 5;
 
     idlePeasants = 4;
-    farmers = 0;
+    farmers = 1;
+    miners = 0;
 
     hoes = 0;
 
-    blacksmith = 1; //should be 0 for game
-    barracks = 1; //should be 0 for game
+    blacksmithLevel = 1; //should be 0 for game
+    barracksLevel = 1; //should be 0 for game
     farm = 1;
     smallHouse = 1;
     largeHouse = 2;
@@ -245,9 +261,19 @@ function goWoodCutting(){
 }
 
 function sleep(){
+    food -= Math.floor(population / 5);
+    food += farmers;
+    console.log("Population: " + population + "\nCap: " + (smallHouse * 5 + largeHouse * 10));
+    if(population < (smallHouse * 5 + largeHouse * 10)){
+        var newVillagerModifier = Math.round(Math.random() * 4 - 2); //this is currently screwed up when you get close to max pop
+        var newVillagers = Math.floor(((smallHouse * 5 + largeHouse * 10) - population) / 4) + newVillagerModifier;
+        idlePeasants += newVillagers;
+    }
+
     time = 0;
     day += 1;
     write("You got a good night's rest!\n\nIt is now 6:00 am on day " + day + ".");
+    write(newVillagers + "came to the village last night.");
 
     updateResources();
 }
@@ -274,7 +300,7 @@ function processBuilding(){
             wood -= 50;
             stone -= 75;
             iron -= 5;
-            blacksmith += 1;
+            blacksmithLevel += 1;
             time += 4;
             updateResources();
             write("You have upgraded your blacksmith.^^What would you like to do next?");
@@ -288,7 +314,7 @@ function processBuilding(){
             wood -= 75;
             stone -= 50;
             iron -= 5;
-            barracks += 1;
+            barracksLevel += 1;
             time += 4;
             updateResources();
             write("You have upgraded your barracks.^^What would you like to do next?");
@@ -310,7 +336,7 @@ function forge(){
         write("It's too late to forge anything right now.^^What would you like to do next?");
         return;
     }
-    if(blacksmith == 0) {
+    if(blacksmithLevel == 0) {
         write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
@@ -333,7 +359,7 @@ function processForging(){
                 ironCost: 1,
                 vineCost: 0,
                 forgeTime: 1,
-                forgeLevel: 1
+                blacksmithLevel: 1
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
@@ -347,7 +373,7 @@ function processForging(){
                 ironCost: 1,
                 vineCost: 0,
                 forgeTime: 1,
-                forgeLevel: 1
+                blacksmithLevel: 1
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
             break;
@@ -374,8 +400,8 @@ function processForgingCount(){
         return;
     }
 
-    if(blacksmith < forgeItem.forgeLevel){
-        write("You must upgrade your blacksmith to forge " + forgeItem.variable + ".^Current level: " + blacksmith + "^Required level: " + forgeItem.forgeLevel + "^^What would you like to do next?");
+    if(blacksmith < forgeItem.blacksmithLevel){
+        write("You must upgrade your blacksmith to forge " + forgeItem.variable + ".^Current level: " + blacksmithLevel + "^Required level: " + forgeItem.blacksmithLevel + "^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
         document.getElementById('inputTextBox').value = "";
         return;
@@ -430,7 +456,7 @@ function train(){
         write("It's too late to train troops or workers right now.^^What would you like to do next?");
         return;
     }
-    if(barracks == 0) {
+    if(barracksLevel == 0) {
         write("You must build a barracks before you can train troops or workers.^^What would you like to do next?");
         return;
     }
@@ -494,8 +520,8 @@ function processTrainingCount(){
         return;
     }
 
-    if(barracks < trainItem.barracksLevel){
-        write("You must upgrade your barracks to train " + trainItem.variable + ".^Current level: " + barracks + "^Required level: " + trainItem.barracksLevel + "^^What would you like to do next?");
+    if(barracksLevel < trainItem.barracksLevel){
+        write("You must upgrade your barracks to train " + trainItem.variable + ".^Current level: " + barracksLevel + "^Required level: " + trainItem.barracksLevel + "^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
         document.getElementById('inputTextBox').value = "";
         return;
