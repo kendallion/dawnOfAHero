@@ -56,6 +56,7 @@ var axes;
 var foodProduction;
 
 //population
+var housing;
 var population;
 var idlePeasants;
 var farmers;
@@ -74,7 +75,7 @@ var market;
 
 function updateResources(){
     population = idlePeasants + farmers + miners + woodcutters;
-    storage = hoes + picks + axes + stone  + wood + iron + vines + food;
+    housing = smallHouse * 5 + largeHouse * 10;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
     document.getElementById('vines').textContent = vines;
@@ -91,10 +92,10 @@ function updateResources(){
     document.getElementById('picks').textContent = picks;
     document.getElementById('axes').textContent = axes;
 
-    document.getElementById('availableHousing').textContent = (smallHouse * 5 + largeHouse * 10);
+    document.getElementById('availableHousing').textContent = housing;
     document.getElementById('population').textContent = population;
 
-    document.getElementById('storage').textContent = storage;
+    document.getElementById('storage').textContent = stockpile * 250 - storageLeft();
     document.getElementById('maxStorage').textContent = stockpile * 250;
 
     document.getElementById('foodProduction').textContent = farmers;
@@ -111,6 +112,10 @@ function updateResources(){
     else timeSpan.textContent = hour - 6 + ":" + minute + " PM";
 }
 
+function storageLeft(){
+    return stockpile * 250 - hoes - picks - axes - stone  - wood - iron - vines - food;
+}
+
 const pluralize = (count, noun, suffix = 's') =>
   `${count} ${noun}${count !== 1 ? suffix : ''}`;
 
@@ -119,7 +124,7 @@ function write(text) {
     if(isWriting) return;
     isWriting = true;
     var i = 0;
-    var speed = 10;
+    var speed = 13;
     document.getElementById('content').innerHTML += '<br>';
     document.getElementById('content').innerHTML += '<br>';
 
@@ -146,7 +151,7 @@ function init(){
     time = 0;
     day = 1;
 
-    stone = 5;
+    stone = 170;
     wood = 8;
     iron = 4;
     vines = 7;
@@ -155,8 +160,8 @@ function init(){
 
     idlePeasants = 4;
     farmers = 1;
-    miners = 0;
-    woodcutters = 0;
+    miners = 3;
+    woodcutters = 3;
 
     hoes = 0;
     picks = 0;
@@ -257,13 +262,27 @@ function goMining(){
         write("It's too late to go mining.")
         return;
     }
+    if(storageLeft() <= 0){
+        write("Your stockpile is full and you cannot go mining.");
+        return;
+    }
     var stoneGet = Math.floor(Math.random() * 13 + 10);
-    var ironGet = Math.floor(Math.random() * 11 - 5)
+    var ironGet = Math.floor(Math.random() * 11 - 5);
+    if(ironGet < 0) ironGet = 0;
+
+    if(ironGet > storageLeft()) {
+        ironGet = storageLeft();
+        stoneGet = 0;
+    }
+    if(ironGet + stoneGet > storageLeft()){
+        stoneGet = storageLeft() - ironGet;
+    }
+
     if (ironGet > 0) {
-        write("You got " + stoneGet + " stone and " + ironGet + " iron from mining.");
+        write("Gathered " + stoneGet + " stone and " + ironGet + " iron.");
         iron += ironGet;
     }
-    else write("You got " + stoneGet + " stone from mining.")
+    else write("Gathered " + stoneGet + " stone.")
     stone += stoneGet;
     time +=4;
     updateResources();
@@ -274,39 +293,92 @@ function goWoodCutting(){
         write("It's too late to go woodcutting.")
         return;
     }
+    if(storageLeft() <= 0){
+        write("Your stockpile is full and you cannot go woodcutting.");
+        return;
+    }
     var woodGet = Math.floor(Math.random() * 14 + 11);
-    var vineGet = Math.floor(Math.random() * 10 - 5)
+    var vineGet = Math.floor(Math.random() * 10 - 5);
+    if (vineGet < 0) vineGet = 0;
+
+    if(vineGet > storageLeft()) {
+        vineGet = storageLeft();
+        woodGet = 0;
+    }
+    if(vineGet + woodGet > storageLeft()){
+        woodGet = storageLeft() - vineGet;
+    }
+
     if (vineGet > 0) {
-        write("You got " + woodGet + " wood and " +  pluralize(vineGet, "vine") + " from woodcutting.");
+        write("Gathered " + woodGet + " wood and " +  pluralize(vineGet, "vine") + ".");
         vines += vineGet;
     }
-    else write("You got " + woodGet + " wood from woodcutting.")
+    else write("Gathered " + woodGet + " wood.")
     wood += woodGet;
     time += 4;
     updateResources();
 }
 
 function sleep(){
-    //food and population
     var sleepMessage = "";
+    time = 0;
+    day += 1;
+    sleepMessage = ("You got a good night's rest!\n\nIt is now 6:00 am on day " + day + ".");
+
+    //food
     food -= Math.floor(population / 5);
-    food += farmers;
-    if(population < (smallHouse * 5 + largeHouse * 10)){
+    var foodGet = farmers;
+    if(foodGet >= storageLeft()) {
+        foodGet = storageLeft();
+        food += foodget;
+        sleepMessage += "^^You ran out of space in your stockpile, and you were only able to store " + storageLeft() + " food.";
+    }
+    else food += farmers;
+
+    //population
+    if(population < housing){
         var newVillagerModifier = Math.round(Math.random() * 2.5);
-        var newVillagers = Math.floor(((smallHouse * 5 + largeHouse * 10) - population) / 5 + newVillagerModifier);
-        if(newVillagers + population > smallHouse * 5 + largeHouse * 10) newVillagers = (smallHouse * 5 + largeHouse * 10) - population;
+        var newVillagers = Math.floor((housing - population) / 5 + newVillagerModifier);
+        if(newVillagers + population > housing) newVillagers = housing - population;
         idlePeasants += newVillagers;
+        if (newVillagers > 0) sleepMessage += ("^^" + pluralize(newVillagers, "villager") + " came to the village last night.");
     }
 
     //taxes
+    var taxes = Math.floor((idlePeasants + farmers + miners + woodcutters) / 5);
+    gold += taxes;
+    sleepMessage += "^^You received " + taxes + " gold from taxes.";
 
     //miners and Woodcutters
+    var stoneGet = 0;
+    var ironGet = 0;
+    var woodGet = 0;
+    var vineGet = 0;
+    for(var i=0;i<miners;i++){
+        ironGet += Math.floor(Math.random() * 2);
+        stoneGet += Math.floor(Math.random() * 4 + 4);
+    }
+    for(var i=0;i<woodcutters;i++){
+        vineGet += Math.floor(Math.random() * 2);
+        woodGet += Math.floor(Math.random() * 4 + 4);
+        console.log("vineget: " + vineGet);
+        console.log("woodGet: " + woodGet);
+    }
 
+    if(ironGet > storageLeft()) ironGet = storageLeft();
+    iron += ironGet;
+    if(vineGet > storageLeft()) vineGet = storageLeft();
+    vines += vineGet;
+    if(stoneGet > storageLeft()) stoneGet = storageLeft();
+    stone += stoneGet;
+    if(woodGet > storageLeft()) woodGet = storageLeft();
+    wood += woodGet;
 
-    time = 0;
-    day += 1;
-    sleepMessage += ("You got a good night's rest!\n\nIt is now 6:00 am on day " + day + ".");
-    sleepMessage += ("^^" + pluralize(newVillagers, "villager") + " came to the village last night.");
+    sleepMessage += "^^Resources received from workers: " + "^Iron: " + ironGet + "^Vines: " + vineGet + "^Stone: " + stoneGet + "^Wood: " + woodGet;
+
+    if(storageLeft() <= 0) sleepMessage += "^^No more storage space left.";
+
+    sleepMessage += "^^What would you like to do next?^^";
     write(sleepMessage);
 
     updateResources();
@@ -438,7 +510,7 @@ function forge(){
         write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
-    write("What would you like to forge?^o: Hoe^p: Pick^h: Help^c: Cancel");
+    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^h: Help^c: Cancel");
     inputState = INPUTSTATE.FORGING;
 }
 
@@ -512,7 +584,7 @@ function processForgingCount(){
         return;
     }
 
-    if(blacksmith < forgeItem.blacksmithLevel){
+    if(blacksmithLevel < forgeItem.blacksmithLevel){
         write("You must upgrade your blacksmith to forge " + forgeItem.variable + ".^Current level: " + blacksmithLevel + "^Required level: " + forgeItem.blacksmithLevel + "^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
         document.getElementById('inputTextBox').value = "";
@@ -576,7 +648,7 @@ function train(){
         write("You do not have any idle peasants that can be trained.^^What would you like to do next?");
         return;
     }
-    write("What would you like to train?^f: Farmer^m: Miner^h: Help^c: Cancel");
+    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^h: Help^c: Cancel");
     inputState = INPUTSTATE.TRAINING;
 }
 
