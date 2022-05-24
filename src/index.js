@@ -1,7 +1,16 @@
 //bacon
 
 //TODO:
+//Market buy & sell
+//night attacks
+//scouting
+//attacking camps
+//horses & carts
+//better help menus
+//cookie saves
 //Change sky color based on time
+//better resource UI
+//representative graphics
 
 var isWriting = false;
 
@@ -12,10 +21,12 @@ const INPUTSTATE = {
     FORGINGCOUNT: 3,
     TRAINING: 4,
     TRAININGCOUNT: 5,
-    UPGRADING: 6
+    UPGRADING: 6,
+    DISCARDING: 7,
+    DISCARDINGCOUNT: 8
 };
 var inputState;
-//var forgeItem;
+
 var forgeItem = {
     name: null,
     code: null,
@@ -36,6 +47,8 @@ var TrainItem = {
     barracksLevel: null
 };
 
+var discardItem = null;
+
 var time;
 var day;
 
@@ -52,6 +65,9 @@ var food;
 var hoes;
 var picks;
 var axes;
+var spears;
+var swords;
+var bows;
 
 var foodProduction;
 
@@ -62,6 +78,9 @@ var idlePeasants;
 var farmers;
 var miners;
 var woodcutters;
+var spearmen;
+var swordsmen;
+var archers;
 
 //buildings
 var blacksmithLevel;
@@ -74,7 +93,7 @@ var stockpile;
 var market;
 
 function updateResources(){
-    population = idlePeasants + farmers + miners + woodcutters;
+    population = idlePeasants + farmers + miners + woodcutters + spearmen + swordsmen + archers;
     housing = smallHouse * 5 + largeHouse * 10;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
@@ -87,10 +106,16 @@ function updateResources(){
     document.getElementById('farmers').textContent = farmers;
     document.getElementById('miners').textContent = miners;
     document.getElementById('woodcutters').textContent = woodcutters;
+    document.getElementById('spearmen').textContent = spearmen;
+    document.getElementById('swordsmen').textContent = swordsmen;
+    document.getElementById('archers').textContent = archers;
 
     document.getElementById('hoes').textContent = hoes;
     document.getElementById('picks').textContent = picks;
     document.getElementById('axes').textContent = axes;
+    document.getElementById('spears').textContent = spears;
+    document.getElementById('swords').textContent = swords;
+    document.getElementById('bows').textContent = bows;
 
     document.getElementById('availableHousing').textContent = housing;
     document.getElementById('population').textContent = population;
@@ -113,7 +138,7 @@ function updateResources(){
 }
 
 function storageLeft(){
-    return stockpile * 250 - hoes - picks - axes - stone  - wood - iron - vines - food;
+    return stockpile * 250 - hoes - picks - axes - spears - swords - bows - stone  - wood - iron - vines - food;
 }
 
 const pluralize = (count, noun, suffix = 's') =>
@@ -162,10 +187,16 @@ function init(){
     farmers = 1;
     miners = 3;
     woodcutters = 3;
+    spearmen = 0;
+    swordsmen = 0;
+    archers = 0;
 
     hoes = 0;
     picks = 0;
     axes = 0;
+    spears = 0;
+    swords = 0;
+    bows = 0;
 
     blacksmithLevel = 1; //should be 0 for game
     barracksLevel = 1; //should be 0 for game
@@ -212,6 +243,16 @@ function processInput(){
         return;
     }
 
+    if(inputState == INPUTSTATE.DISCARDING){
+        processDiscarding();
+        return;
+    }
+
+    if(inputState == INPUTSTATE.DISCARDINGCOUNT){
+        processDiscardingCount();
+        return;
+    }
+
     switch(document.getElementById('inputTextBox').value) {
         case 'h':
         case 'H':
@@ -247,6 +288,11 @@ function processInput(){
         case 'u':
         case 'U':
             upgrade();
+            break;
+        case 'd':
+        case 'D':
+            discard();
+            break;
         default:
             write("Not a valid input!");
     }
@@ -258,8 +304,8 @@ function giveHelp(){
 }
 
 function goMining(){
-    if(time > 60) {
-        write("It's too late to go mining.")
+    if(time > 56) {
+        write("It's too late to go mining. Mining takes two hours.")
         return;
     }
     if(storageLeft() <= 0){
@@ -284,13 +330,13 @@ function goMining(){
     }
     else write("Gathered " + stoneGet + " stone.")
     stone += stoneGet;
-    time +=4;
+    time += 8;
     updateResources();
 }
 
 function goWoodCutting(){
-    if(time > 60) {
-        write("It's too late to go woodcutting.")
+    if(time > 56) {
+        write("It's too late to go woodcutting. Woodcutting takes two hours.")
         return;
     }
     if(storageLeft() <= 0){
@@ -315,7 +361,7 @@ function goWoodCutting(){
     }
     else write("Gathered " + woodGet + " wood.")
     wood += woodGet;
-    time += 4;
+    time += 8;
     updateResources();
 }
 
@@ -477,6 +523,32 @@ function processUpgrading(){
         case 'h':
             write("I can help!");
             break;
+        case 'a':
+            if(wood < 75 * barracksLevel || stone < 50 * barracksLevel){
+                write("You do not have enough resources to upgrade your barracks. It costs " + 75 * barracksLevel + " wood and " + 50 * barracksLevel + " stone.^^What would you like to upgrade?");
+                break;
+            }
+            wood -= 75 * barracksLevel;
+            stone -= 50 * barracksLevel;
+            barracksLevel += 1;
+            time += 4;
+            updateResources();
+            write("You have upgraded your barracks to level " + barracksLevel + ".^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
+        case 'b':
+            if(wood < 50 * blacksmithLevel || stone < 75 * blacksmithLevel){
+                write("You do not have enough resources to upgrade your blacksmith. It costs " + 50 * blacksmithLevel + " wood and " + 75 * blacksmithLevel + " stone.^^What would you like to upgrade?");
+                break;
+            }
+            wood -= 50 * blacksmithLevel;
+            stone -= 75 * blacksmithLevel;
+            blacksmithLevel += 1;
+            time += 4;
+            updateResources();
+            write("You have upgraded your blacksmith to level " + blacksmithLevel + ".^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
         case 's':
             if(wood < 50 || stone < 75){
                 write("You do not have enough resources to upgrade your stockpile. It costs 50 wood and 75 stone.^^What would you like to upgrade?");
@@ -510,7 +582,7 @@ function forge(){
         write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
-    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^h: Help^c: Cancel");
+    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^s: Spear^w: Sword^b: Bow^h: Help^c: Cancel");
     inputState = INPUTSTATE.FORGING;
 }
 
@@ -560,6 +632,52 @@ function processForging(){
                 blacksmithLevel: 1
             };
             inputState = INPUTSTATE.FORGINGCOUNT;
+            break;
+        case 's':
+            write("How many spears would you like to forge?");
+            forgeItem = {
+                name: "spear",
+                variable: "spears",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 1,
+                vineCost: 0,
+                forgeTime: 1,
+                blacksmithLevel: 1
+            };
+            inputState = INPUTSTATE.FORGINGCOUNT;
+            break;
+        case 'w':
+            write("How many swords would you like to forge?");
+            forgeItem = {
+                name: "sword",
+                variable: "swords",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 2,
+                vineCost: 0,
+                forgeTime: 1,
+                blacksmithLevel: 2
+            };
+            inputState = INPUTSTATE.FORGINGCOUNT;
+            break;
+        case 'b':
+            write("How many bows would you like to make?");
+            forgeItem = {
+                name: "bow",
+                variable: "bows",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 0,
+                vineCost: 2,
+                forgeTime: 1,
+                blacksmithLevel: 2
+            };
+            inputState = INPUTSTATE.FORGINGCOUNT;
+            break;
+        case 'c':
+            write("Cancelled forging.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
             break;
         default:
             write("Not a valid choice. Please try again.");
@@ -648,7 +766,7 @@ function train(){
         write("You do not have any idle peasants that can be trained.^^What would you like to do next?");
         return;
     }
-    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^h: Help^c: Cancel");
+    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^h: Help^c: Cancel");
     inputState = INPUTSTATE.TRAINING;
 }
 
@@ -692,6 +810,46 @@ function processTraining(){
                 barracksLevel: 1
             };
             inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        case 's':
+            write("How many spearmen would you like to train?");
+            trainItem = {
+                name: "spearmen",
+                variable: "spearmen",
+                neededItemVariable: "spear",
+                goldCost: 1,
+                trainTime: 1,
+                barracksLevel: 1
+            };
+            inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        case 'o':
+            write("How many swordsmen would you like to train?");
+            trainItem = {
+                name: "swordsmen",
+                variable: "swordsmen",
+                neededItemVariable: "swords",
+                goldCost: 1,
+                trainTime: 2,
+                barracksLevel: 2
+            };
+            inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        case 'a':
+            write("How many archers would you like to train?");
+            trainItem = {
+                name: "archer",
+                variable: "archers",
+                neededItemVariable: "bows",
+                goldCost: 2,
+                trainTime: 2,
+                barracksLevel: 2
+            };
+            inputState = INPUTSTATE.TRAININGCOUNT;
+            break;
+        case 'c':
+            write("Cancelled training.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
             break;
         default:
             write("Not a valid choice. Please try again.");
@@ -756,6 +914,65 @@ function processTrainingCount(){
     }
     else{
         write(trainError + "What would you like to do next?");
+        inputState = INPUTSTATE.READY;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
+
+function discard(){
+    write("What would you like to discard?^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel");
+    inputState = INPUTSTATE.DISCARDING;
+    return;
+}
+
+function processDiscarding(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 's':
+            discardItem = "stone";
+            break;
+        case 'w':
+            discardItem = "wood";
+            break;
+        case 'i':
+            discardItem = "iron";
+            break;
+        case 'v':
+            discardItem = "vines";
+            break;
+        case 'c':
+            write("Cancelled discard.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            document.getElementById('inputTextBox').value = "";
+            return;
+    }
+    write("What quantity of " + discardItem + " would you like to discard?");
+    inputState = INPUTSTATE.DISCARDINGCOUNT;
+    document.getElementById('inputTextBox').value = "";
+}
+
+function processDiscardingCount(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled discard.^^What would you like to do next?")
+        inputState = INPUTSTATE.READY;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    var count = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(count)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(count > window[discardItem]){
+        write("You cannot discard that quantity of " + discardItem + ", since you only have " + window[discardItem] + ".^^What quantity of " + discardItem + " would you like to discard?");
+    }
+    else{
+        window[discardItem] -= count;
+        updateResources();
+        if(count == 1 && discardItem == "vines") write("You have discarded 1 vine.^^What would you like to do next?");
+        else write("You have discarded " + count + " " + discardItem + ".^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
     }
     document.getElementById('inputTextBox').value = "";
