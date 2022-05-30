@@ -1,7 +1,7 @@
 //bacon
 
 //TODO:
-//Market buy & sell
+//Market buy & sell - DONE
 //night attacks
 //scouting
 //attacking camps
@@ -13,6 +13,7 @@
 //representative graphics
 
 var isWriting = false;
+var nextFunction = null;
 
 const INPUTSTATE = {
     READY: 0,
@@ -48,6 +49,8 @@ var TrainItem = {
 };
 
 var discardItem = null;
+var marketChoice = null;
+var marketItem = null;
 
 var time;
 var day;
@@ -214,6 +217,11 @@ function init(){
 function processInput(){
     if(isWriting) return;
 
+    if(nextFunction) {
+        nextFunction();
+        return;
+    }
+
     if(inputState == INPUTSTATE.BUILDING) {
         processBuilding();
         return;
@@ -292,6 +300,10 @@ function processInput(){
         case 'd':
         case 'D':
             discard();
+            break;
+        case 'a':
+        case 'A':
+            goToMarket();
             break;
         default:
             write("Not a valid input!");
@@ -435,7 +447,7 @@ function build(){
         write("It's too late to build anything right now.");
         return;
     }
-    write("What would you like to build?^B: Blacksmith^A: Barracks^H: Help^C: Cancel");
+    write("What would you like to build?^B: Blacksmith^A: Barracks^S: Small House^L: Large House^M: Market^H: Help^C: Cancel");
     inputState = INPUTSTATE.BUILDING;
 }
 
@@ -446,7 +458,11 @@ function processBuilding(){
             break;
         case 'b':
             if(wood < 50 || stone < 75 || iron < 5){
-                write("You do not have enough resources to upgrade your barracks. It costs 50 wood, 75 stone, and 5 iron.^^What would you like to build?");
+                write("You do not have enough resources to build a barracks. It costs 50 wood, 75 stone, and 5 iron.^^What would you like to build?");
+                break;
+            }
+            if(blacksmithLevel > 0){
+                write("You already have a level " + blacksmithLevel + " blacksmith. To upgrade your blacksmith, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
                 break;
             }
             wood -= 50;
@@ -461,6 +477,10 @@ function processBuilding(){
         case 'a':
             if(wood < 75 || stone < 50 || iron < 5){
                 write("You do not have enough resources to upgrade your barracks. It costs 50 wood, 75 stone, and 5 iron.^^What would you like to build?");
+                break;
+            }
+            if(barracksLevel > 0){
+                write("You already have a level " + barracksLevel + " barracks. To upgrade your barracks, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
                 break;
             }
             wood -= 75;
@@ -498,6 +518,23 @@ function processBuilding(){
             write("You have built a large house.^^What would you like to do next?");
             inputState = INPUTSTATE.READY;
             break;
+        case 'm':
+            if(wood < 150 || stone < 100){
+                write("You do not have enough resources to build a market. It requires 125 wood and 75 stone.");
+                break;
+            }
+            if(market > 0){
+                write("You already have a level " + market + " market. To upgrade your market, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
+                break;
+            }
+            wood -= 150;
+            stone -= 100;
+            market += 1;
+            time += 4;
+            updateResources();
+            write("You have built a market.^^What would you like to do next?");
+            inputState = INPUTSTATE.READY;
+            break;
         case 'c':
             write("Cancelled build.^^What would you like to do next?");
             inputState = INPUTSTATE.READY;
@@ -506,6 +543,7 @@ function processBuilding(){
             write("Not a valid build. Please try again.");
             break;
     }
+    inputState = INPUTSTATE.READY;
     document.getElementById('inputTextBox').value = "";
 }
 
@@ -974,6 +1012,106 @@ function processDiscardingCount(){
         if(count == 1 && discardItem == "vines") write("You have discarded 1 vine.^^What would you like to do next?");
         else write("You have discarded " + count + " " + discardItem + ".^^What would you like to do next?");
         inputState = INPUTSTATE.READY;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
+
+function goToMarket(){
+    if(market == 0){
+        write("You must first build a market before you can buy or sell resources.^^What would you like to do next?");
+        return;
+    }
+    write("What would you like to do at the market?^b: Buy resources^s: Sell Resources^c: Cancel");
+    nextFunction = marketBuyOrSell;
+    return;
+}
+
+function marketBuyOrSell(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 'b':
+            marketChoice = "buy";
+            write("What would you like to buy?^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel");
+            break;
+        case 's':
+            marketChoice = "sell";
+            write("What would you like to sell?^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel");
+            break;
+        case 'c':
+            write("Cancelled market action.^^What would you like to do next?");
+            nextFunction = null;
+            document.getElementById('inputTextBox').value = "";
+            return;
+    }
+    nextFunction = marketItemChoice;
+    document.getElementById('inputTextBox').value = "";
+}
+
+function marketItemChoice(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 's':
+            marketItem = "stone";
+            break;
+        case 'w':
+            marketItem = "wood";
+            break;
+        case 'i':
+            marketItem = "iron";
+            break;
+        case 'v':
+            marketItem = "vines";
+            break;
+        case 'c':
+            write("Cancelled market action.^^What would you like to do next?");
+            nextFunction = null;
+            document.getElementById('inputTextBox').value = "";
+            return;
+    }
+    write("How many stacks of " + marketItem + " would you like to " + marketChoice + "?^^Wood and stone: stacks of 50 for 1 gold^^Iron and vines: stacks of 5 for 1 gold.");
+    nextFunction = marketCount;
+    document.getElementById('inputTextBox').value = "";
+}
+
+function marketCount(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled market action.^^What would you like to do next?")
+        nextFunction = null;;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    var count = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(count)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    var goldCount = count;
+    if(marketItem == "wood" || marketItem == "stone") count *= 50;
+    else if(marketItem == "vines" || marketItem == "iron") count *= 5;
+
+    if(marketChoice == "sell"){
+        if(count > window[marketItem]){
+            write("You cannot sell that quantity of " + marketItem + ", since you only have " + window[marketItem] + ".^^How many stacks of " + marketItem + " would you like to sell?");
+        }
+        else{
+            window[marketItem] -= count;
+            gold += goldCount;
+            updateResources();
+            write("You have sold " + count + " " + marketItem + " for " + goldCount + " gold.^^What would you like to do next?");
+            nextFunction = null;
+        }
+    }
+    else if(marketChoice == "buy"){
+        if(count > storageLeft()) write("You do not have enough storage space to buy that quantity of " + marketItem + ".^^How many stacks of " + marketItem + " would you like to buy?");
+        else if(gold < goldCount) write("You do not have enough gold to buy that quantity of " + marketItem + ".^^How many stacks of " + marketItem + " would you like to buy?");
+        else{
+            window[marketItem] += count;
+            gold -= goldCount;
+            updateResources();
+            write("You have bought " + count + " " + marketItem + " for " + goldCount + " gold.^^What would you like to do next?");
+            nextFunction = null;
+        }
     }
     document.getElementById('inputTextBox').value = "";
 }
