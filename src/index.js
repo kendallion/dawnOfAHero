@@ -3,6 +3,7 @@
 //TODO:
 //Market buy & sell - DONE
 //night attacks
+//farm upgrades
 //scouting
 //attacking camps
 //horses & carts
@@ -326,6 +327,7 @@ function goWoodCutting(){
 }
 
 function sleep(){
+    processNightAttack();
     var sleepMessage = "";
     time = 0;
     day += 1;
@@ -1060,4 +1062,37 @@ function marketCount(){
         }
     }
     document.getElementById('inputTextBox').value = "";
+}
+
+function processNightAttack(){
+    var attackChance = Math.round(Math.random() * (day * 2) + 5);
+    if(attackChance > day) return;
+    else{
+        var enemyOrcs = Math.ceil(Math.random() * (day / 2) + 2);
+        var enemyOgres = Math.max(0,Math.ceil(Math.random() * (day / 1.8) - 4));
+        var enemyPower = enemyOrcs + enemyOgres;
+        var friendlyPower = spearmen + swordsmen + archers;
+
+        while(enemyPower > 0 || friendlyPower > 0){
+            enemyPower -= Math.ceil(archers * (Math.random() * .15 + .25));
+            if(enemyPower > friendlyPower){
+                enemyPower -= friendlyPower;
+                spearmen = 0;
+                swordsmen = 0;
+                archers = 0;
+                friendlyPower = 0;
+            }
+            else{
+                //need to calculate losses across troop types
+            }
+        }
+        var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
+        var ironStolen = Math.min(iron,Math.round(enemyPower / 10 * 2));
+        var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 2));
+        var woodStolen = Math.min(wood,Math.round(enemyPower / 10 * 1));
+        var stoneStolen = Math.min(stone,Math.round(enemyPower / 10 * 1));
+        var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 1));
+        //need to remove the items from storage and inform the player
+        
+    }
 }
