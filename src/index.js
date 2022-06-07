@@ -2,8 +2,8 @@
 
 //TODO:
 //Market buy & sell - DONE
-//night attacks
-//add lose conditions
+//night attacks - DONE
+//add lose conditions - DONE
 //farm upgrades
 //scouting
 //attacking camps
@@ -124,8 +124,8 @@ function updateResources(){
     document.getElementById('storage').textContent = stockpile * 250 - storageLeft();
     document.getElementById('maxStorage').textContent = stockpile * 250;
 
-    document.getElementById('foodProduction').textContent = farmers;
-    document.getElementById('foodConsumption').textContent = Math.floor(population / 5);
+    document.getElementById('foodProduction').textContent = foodProduction();
+    document.getElementById('foodConsumption').textContent = foodConsumption();
 
     document.getElementById('day').textContent = day;
     var timeSpan = document.getElementById('time');
@@ -141,6 +141,9 @@ function updateResources(){
 function storageLeft(){
     return stockpile * 250 - hoes - picks - axes - spears - swords - bows - stone  - wood - iron - vines - food;
 }
+
+function foodProduction() { return farmers; }
+function foodConsumption() { return Math.floor(population / 5); }
 
 const pluralize = (count, noun, suffix = 's') =>
   `${count} ${noun}${count !== 1 ? suffix : ''}`;
@@ -186,15 +189,15 @@ function init(){
 
     idlePeasants = 4;
     farmers = 1;
-    miners = 3;
-    woodcutters = 3;
-    spearmen = 0;
-    swordsmen = 0;
+    miners = 2;
+    woodcutters = 2;
+    spearmen = 2;
+    swordsmen = 1;
     archers = 0;
 
-    hoes = 0;
-    picks = 0;
-    axes = 0;
+    hoes = 2;
+    picks = 1;
+    axes = 1;
     spears = 0;
     swords = 0;
     bows = 0;
@@ -203,7 +206,7 @@ function init(){
     barracksLevel = 0;
     farm = 1;
     smallHouse = 1;
-    largeHouse = 2;
+    largeHouse = 1;
     stable = 0;
     stockpile = 1;
     market = 0;
@@ -337,20 +340,35 @@ function goWoodCutting(){
 }
 
 function sleep(){
-    var sleepMessage = "------------------------^^";
+    if(food - foodConsumption() + foodProduction() <= 0){
+        write("^You have run out of food and the village has starved! Better luck next time.");
+        document.getElementById("inputTextBox").disabled = true;
+        food = 0;
+        updateResources();
+        return;
+    }
+    var sleepMessage = "--------------------------------";
     sleepMessage += processNightAttack(sleepMessage);
+
+    if(food - foodConsumption() + foodProduction() <= 0){
+        sleepMessage += "The attackers made off with all of your food and the village has starved. Better luck next time.";
+        write(sleepMessage);
+        document.getElementById("inputTextBox").disabled = true;
+        food = 0;
+        updateResources();
+        return;
+    }
+
     time = 0;
     day += 1;
-    //if(!sleepMessage) sleepMessage += "You got a good night's rest!^^Current time: 6:00 am on day " + day;
-    //else sleepMessage += "Current time: 6:00 am on day " + day;
 
     //food
-    food -= Math.floor(population / 5);
-    var foodGet = farmers;
+    food -= foodConsumption();
+    var foodGet = foodProduction();
     if(foodGet >= storageLeft()) {
         foodGet = storageLeft();
         food += foodGet;
-        sleepMessage += "^You ran out of space in your stockpile, and you were only able to store " + foodGet + " food.";
+        sleepMessage += "You ran out of space in your stockpile, and you were only able to store " + foodGet + " food. Consider discarding or selling unnecessary resources.^^";
     }
     else food += farmers;
 
@@ -360,13 +378,13 @@ function sleep(){
         var newVillagers = Math.floor((housing - population) / 5 + newVillagerModifier);
         if(newVillagers + population > housing) newVillagers = housing - population;
         idlePeasants += newVillagers;
-        if (newVillagers > 0) sleepMessage += "^^" + newVillagers + " new villagers came to the village last night.";
+        if (newVillagers > 0) sleepMessage += pluralize(newVillagers, "new villager") + " came to the village last night.^^";
     }
 
     //taxes
     var taxes = Math.floor((idlePeasants + farmers + miners + woodcutters) / 5);
     gold += taxes;
-    sleepMessage += "^^You collected " + taxes + " gold in taxes.";
+    sleepMessage += "You collected " + taxes + " gold in taxes.^^";
 
     //miners and Woodcutters
     var stoneGet = 0;
@@ -381,7 +399,6 @@ function sleep(){
         vineGet += Math.floor(Math.random() * 2);
         woodGet += Math.floor(Math.random() * 4 + 4);
     }
-
     if(ironGet > storageLeft()) ironGet = storageLeft();
     iron += ironGet;
     if(vineGet > storageLeft()) vineGet = storageLeft();
@@ -391,11 +408,12 @@ function sleep(){
     if(woodGet > storageLeft()) woodGet = storageLeft();
     wood += woodGet;
 
-    sleepMessage += "^^Your workers gathered the following resources: " + "^Iron: " + ironGet + "^Vines: " + vineGet + "^Stone: " + stoneGet + "^Wood: " + woodGet;
+    sleepMessage += "Your workers gathered the following resources: " + "^Iron: " + ironGet + "^Vines: " + vineGet + "^Stone: " + stoneGet + "^Wood: " + woodGet + "^^";
+    if(storageLeft() <= 0) sleepMessage += "No more storage space left.^^";
 
-    if(storageLeft() <= 0) sleepMessage += "^^No more storage space left.";
+    if(food - ((foodConsumption() - foodProduction()) * 3) <= 0) sleepMessage += "You don't have much food left in your stockpile. Train farmers to ensure adequate food production.^^";
 
-    sleepMessage += "^^It is now day " + day + ". What would you like to do next?^^";
+    sleepMessage += "It is now day " + day + ". What would you like to do next?";
     write(sleepMessage);
 
     updateResources();
@@ -422,25 +440,8 @@ function processBuilding(){
                 woodCost: 50,
                 stoneCost: 75,
                 ironCost: 10,
-                bulidTime: 4
+                buildTime: 4
             };
-
-            if(wood < 50 || stone < 75 || iron < 5){
-                write("You do not have enough resources to build a blacksmith. It costs 50 wood, 75 stone, and 10 iron.^^What would you like to build?");
-                break;
-            }
-            if(blacksmithLevel > 0){
-                write("You already have a level " + blacksmithLevel + " blacksmith. To upgrade your blacksmith, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
-                break;
-            }
-            wood -= 50;
-            stone -= 75;
-            iron -= 5;
-            blacksmithLevel += 1;
-            time += 4;
-            updateResources();
-            write("You have built a blacksmith.^^What would you like to do next?");
-            nextFunction = null;
             break;
         case 'a':
             buildItem = {
@@ -449,24 +450,8 @@ function processBuilding(){
                 woodCost: 75,
                 stoneCost: 50,
                 ironCost: 5,
-                bulidTime: 4
+                buildTime: 4
             };
-            if(wood < 75 || stone < 50 || iron < 5){
-                write("You do not have enough resources to build a barracks. It costs 75 wood, 50 stone, and 5 iron.^^What would you like to build?");
-                break;
-            }
-            if(barracksLevel > 0){
-                write("You already have a level " + barracksLevel + " barracks. To upgrade your barracks, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
-                break;
-            }
-            wood -= 75;
-            stone -= 50;
-            iron -= 5;
-            barracksLevel += 1;
-            time += 4;
-            updateResources();
-            write("You have built a barracks.^^What would you like to do next?");
-            nextFunction = null;
             break;
         case 's':
             buildItem = {
@@ -475,20 +460,8 @@ function processBuilding(){
                 woodCost: 75,
                 stoneCost: 50,
                 ironCost: 0,
-                bulidTime: 4
+                buildTime: 4
             };
-
-            if(wood < 75 || stone < 50){
-                write("You do not have enough resources to build a small house. It requires 75 wood and 50 stone.");
-                break;
-            }
-            wood -= 75;
-            stone -= 50;
-            smallHouse += 1;
-            time += 4;
-            updateResources();
-            write("You have built a small house.^^What would you like to do next?");
-            nextFunction = null;
             break;
         case 'l':
             buildItem = {
@@ -497,20 +470,8 @@ function processBuilding(){
                 woodCost: 125,
                 stoneCost: 75,
                 ironCost: 0,
-                bulidTime: 4
+                buildTime: 4
             };
-
-            if(wood < 125 || stone < 75){
-                write("You do not have enough resources to build a large house. It requires 125 wood and 75 stone.");
-                break;
-            }
-            wood -= 125;
-            stone -= 75;
-            largeHouse += 1;
-            time += 4;
-            updateResources();
-            write("You have built a large house.^^What would you like to do next?");
-            nextFunction = null;
             break;
         case 'm':
             buildItem = {
@@ -519,24 +480,8 @@ function processBuilding(){
                 woodCost: 150,
                 stoneCost: 100,
                 ironCost: 0,
-                bulidTime: 4
+                buildTime: 4
             };
-
-            if(wood < 150 || stone < 100){
-                write("You do not have enough resources to build a market. It requires 125 wood and 75 stone.");
-                break;
-            }
-            if(market > 0){
-                write("You already have a level " + market + " market. To upgrade your market, choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
-                break;
-            }
-            wood -= 150;
-            stone -= 100;
-            market += 1;
-            time += 4;
-            updateResources();
-            write("You have built a market.^^What would you like to do next?");
-            nextFunction = null;
             break;
         case 'c':
             write("Cancelled build.^^What would you like to do next?");
@@ -547,7 +492,6 @@ function processBuilding(){
             break;
     }
 
-    var canBuild = true;
     var buildMessage = "";
 
     if (buildItem.variable == blacksmithLevel ||
@@ -559,15 +503,23 @@ function processBuilding(){
             return;
         }
 
-    if(buildItem.woodCost > wood) buildMessage += "Not enough wood.^Required: " + buildItem.woodCost + "^Current: " + wood;
-    if(buildItem.stoneCost > stone) buildMessage += "Not enough stone.^Required: " + buildItem.stoneCost + "^Current: " + stone;
-    if(buildItem.ironCost > wood) buildMessage += "Not enough iron.^Required: " + buildItem.ironCost + "^Current: " + iron;
+    if(buildItem.woodCost > wood) buildMessage += "Not enough wood.^Required: " + buildItem.woodCost + "^Current: " + wood + "^^";
+    if(buildItem.stoneCost > stone) buildMessage += "Not enough stone.^Required: " + buildItem.stoneCost + "^Current: " + stone + "^^";
+    if(buildItem.ironCost > wood) buildMessage += "Not enough iron.^Required: " + buildItem.ironCost + "^Current: " + iron + "^^";
+    if(buildItem.buildTime + time > 64) buildMessage += "You don't have enough time to build a " + buildItem.name + ".^^";
 
-    if(buildMessage) canBuild = false;
+    if(!buildMessage) {
+        wood -= buildItem.woodCost;
+        stone -= buildItem.stoneCost;
+        iron -= buildItem.ironCost;
+        time += buildItem.buildTime;
+        window[buildItem.variable]++;
+        buildMessage += "You have built a " + buildItem.name + ".^^";
+    }
 
-    //if time
-    //if(canBuild) build it
-
+    updateResources();
+    buildMessage += "What would you like to do next?";
+    write(buildMessage);
     nextFunction = null;
     document.getElementById('inputTextBox').value = "";
 }
@@ -1140,14 +1092,14 @@ function marketCount(){
 }
 
 function processNightAttack(attackMessage){
-    attackMessage = "";
+    attackMessage = "^^";
     var attackChance = Math.round(Math.random() * (day * 2) + 5);
     console.log(attackChance);
     //attackChance = 1; //DEBUG
     if(attackChance > day) return attackMessage;
     else{
-        var enemyOrcs = Math.ceil(Math.random() * (day / 2) + 2);
-        var enemyOgres = Math.max(0,Math.ceil(Math.random() * (day / 1.8) - 4));
+        var enemyOrcs = Math.ceil((Math.random() * (day / 2)**1.5) + 2);
+        var enemyOgres = Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4));
         var enemyPower = enemyOrcs + enemyOgres * 2;
         var friendlyPower = spearmen + swordsmen * 2 + archers / 2;
         var lostSpearmen = 0;
