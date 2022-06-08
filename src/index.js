@@ -27,6 +27,16 @@ var buildItem = {
     buildTime: null
 };
 
+var upgradeItem = {
+    name: null,
+    variable: null,
+    woodCost: null,
+    stoneCost: null,
+    ironCost: null,
+    maxLevel: null,
+    upgradeTime: null
+};
+
 var forgeItem = {
     name: null,
     woodCost: null,
@@ -142,7 +152,7 @@ function storageLeft(){
     return stockpile * 250 - hoes - picks - axes - spears - swords - bows - stone  - wood - iron - vines - food;
 }
 
-function foodProduction() { return farmers; }
+function foodProduction() { return Math.round(farmers + farmers * (farm / 5)); }
 function foodConsumption() { return Math.floor(population / 5); }
 
 const pluralize = (count, noun, suffix = 's') =>
@@ -204,7 +214,7 @@ function init(){
 
     blacksmithLevel = 0;
     barracksLevel = 0;
-    farm = 1;
+    farm = 0;
     smallHouse = 1;
     largeHouse = 1;
     stable = 0;
@@ -497,7 +507,7 @@ function processBuilding(){
     if (buildItem.variable == blacksmithLevel ||
         buildItem.variable == barracksLevel ||
         buildItem.variable == market){
-            write("You already have a level " + window[buildItem.variable] + " " + buildItem.name + ". To upgrade your " + builditem.name + ", choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
+            write("You already have a level " + window[buildItem.variable] + " " + buildItem.name + ". To upgrade your " + buildItem.name + ", choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
             nextFunction = null;
             document.getElementById('inputTextBox').value = "";
             return;
@@ -525,11 +535,7 @@ function processBuilding(){
 }
 
 function upgrade(){
-    if (time > 60) {
-        write("It's too late to upgrade anything right now.");
-        return;
-    }
-    write("What would you like to upgrade?^B: Blacksmith^A: Barracks^S: Stockpile^H: Help^C: Cancel");
+    write("What would you like to upgrade?^b: Blacksmith^a: Barracks^s: Stockpile^f: Farm^h: Help^c: Cancel");
     nextFunction = processUpgrading;
 }
 
@@ -539,43 +545,48 @@ function processUpgrading(){
             write("I can help!");
             break;
         case 'a':
-            if(wood < 75 * barracksLevel || stone < 50 * barracksLevel){
-                write("You do not have enough resources to upgrade your barracks. It costs " + 75 * barracksLevel + " wood and " + 50 * barracksLevel + " stone.^^What would you like to upgrade?");
-                break;
-            }
-            wood -= 75 * barracksLevel;
-            stone -= 50 * barracksLevel;
-            barracksLevel += 1;
-            time += 4;
-            updateResources();
-            write("You have upgraded your barracks to level " + barracksLevel + ".^^What would you like to do next?");
-            nextFunction = null;
+            upgradeItem = {
+                name: "barracks",
+                variable: "barracksLevel",
+                woodCost: 75 * (barracksLevel + 1),
+                stoneCost: 50 * (barracksLevel + 1),
+                ironCost: 1 * (barracksLevel + 1),
+                maxLevel: null,
+                upgradeTime: 4
+            };
             break;
         case 'b':
-            if(wood < 50 * blacksmithLevel || stone < 75 * blacksmithLevel){
-                write("You do not have enough resources to upgrade your blacksmith. It costs " + 50 * blacksmithLevel + " wood and " + 75 * blacksmithLevel + " stone.^^What would you like to upgrade?");
-                break;
-            }
-            wood -= 50 * blacksmithLevel;
-            stone -= 75 * blacksmithLevel;
-            blacksmithLevel += 1;
-            time += 4;
-            updateResources();
-            write("You have upgraded your blacksmith to level " + blacksmithLevel + ".^^What would you like to do next?");
-            nextFunction = null;
+            upgradeItem = {
+                name: "blacksmith",
+                variable: "blacksmithLevel",
+                woodCost: 50 * (blacksmithLevel + 1),
+                stoneCost: 75 * (blacksmithLevel + 1),
+                ironCost: 4 * (blacksmithLevel + 1),
+                maxLevel: null,
+                upgradeTime: 4
+            };
             break;
         case 's':
-            if(wood < 50 || stone < 75){
-                write("You do not have enough resources to upgrade your stockpile. It costs 50 wood and 75 stone.^^What would you like to upgrade?");
-                break;
-            }
-            wood -= 50;
-            stone -= 75;
-            stockpile += 1;
-            time += 4;
-            updateResources();
-            write("You have upgraded your stockpile.^^What would you like to do next?");
-            nextFunction = null;
+            upgradeItem = {
+                name: "stockpile",
+                variable: "stockpile",
+                woodCost: 50,
+                stoneCost: 75,
+                ironCost: 0,
+                maxLevel: null,
+                upgradeTime: 4
+            };
+            break;
+        case 'f':
+            upgradeItem = {
+                name: "farms",
+                variable: "farm",
+                woodCost: 100 * (farm + 1),
+                stoneCost: 25 * (farm + 1),
+                ironCost: 1 * (farm + 1),
+                maxLevel: null,
+                upgradeTime: 4
+            };
             break;
         case 'c':
             write("Cancelled upgrade.^^What would you like to do next?");
@@ -585,6 +596,40 @@ function processUpgrading(){
             write("Not a valid upgrade. Please try again.");
             break;
     }
+
+    var upgradeMessage = "";
+    if(upgradeItem.maxLevel != null && window[upgradeItem.variable] >= upgradeItem.maxLevel) {
+        write("Your " + buildItem.name + " is already at the maximum level of " + upgradeItem.maxLevel + ".^^What would you like to do next?");
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    if (upgradeItem.variable == blacksmithLevel ||
+        upgradeItem.variable == barracksLevel){
+            write("You do not have a  " + upgradeItem.name + " yet. To build a " + builditem.name + ", choose \"build\" (\"b\") at the main menu.^^What would you like to do next?");
+            nextFunction = null;
+            document.getElementById('inputTextBox').value = "";
+            return;
+        }
+
+    if(upgradeItem.woodCost > wood) upgradeMessage += "Not enough wood.^Required: " + upgradeItem.woodCost + "^Current: " + wood + "^^";
+    if(upgradeItem.stoneCost > stone) upgradeMessage += "Not enough stone.^Required: " + upgradeItem.stoneCost + "^Current: " + stone + "^^";
+    if(upgradeItem.ironCost > wood) upgradeMessage += "Not enough iron.^Required: " + upgradeItem.ironCost + "^Current: " + iron + "^^";
+    if(upgradeItem.upgradeTime + time > 64) upgradeMessage += "You don't have enough time to upgrade your " + upgradeItem.name + ".^^";
+
+    if(!upgradeMessage) {
+        wood -= upgradeItem.woodCost;
+        stone -= upgradeItem.stoneCost;
+        iron -= upgradeItem.ironCost;
+        time += upgradeItem.upgradeTime;
+        window[upgradeItem.variable]++;
+        upgradeMessage += "You have upgraded your  " + upgradeItem.name + " to level " + window[upgradeItem.variable] + ".^^";
+    }
+
+    updateResources();
+    upgradeMessage += "What would you like to do next?";
+    write(upgradeMessage);
+    nextFunction = null;
     document.getElementById('inputTextBox').value = "";
 }
 
@@ -1094,7 +1139,6 @@ function marketCount(){
 function processNightAttack(attackMessage){
     attackMessage = "^^";
     var attackChance = Math.round(Math.random() * (day * 2) + 5);
-    console.log(attackChance);
     //attackChance = 1; //DEBUG
     if(attackChance > day) return attackMessage;
     else{
@@ -1105,9 +1149,6 @@ function processNightAttack(attackMessage){
         var lostSpearmen = 0;
         var lostSwordsmen = 0;
         var lostArchers = 0;
-
-        console.log("Orcs: " + enemyOrcs);
-        console.log("Ogres: " + enemyOgres);
 
         enemyPower -= Math.ceil(archers * (Math.random() * .15 + .25));
 
