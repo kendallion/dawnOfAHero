@@ -4,7 +4,7 @@
 //Market buy & sell - DONE
 //night attacks - DONE
 //add lose conditions - DONE
-//farm upgrades
+//farm upgrades - DONE
 //scouting
 //attacking camps
 //horses & carts
@@ -155,8 +155,10 @@ function storageLeft(){
 function foodProduction() { return Math.round(farmers + farmers * (farm / 5)); }
 function foodConsumption() { return Math.floor(population / 5); }
 
-const pluralize = (count, noun, suffix = 's') =>
-  `${count} ${noun}${count !== 1 ? suffix : ''}`;
+  function pluralize(count, noun){
+      if(noun.endsWith('man')) return `${count} ${noun.slice(0,-3)}${count !== 1 ? 'men' : 'man'}`;
+      else return `${count} ${noun}${count !== 1 ? 's' : ''}`;
+  }
 
 function write(text) {
 //let text = document.getElementById("inputTextBox").innerHTML;
@@ -284,7 +286,7 @@ function processInput(){
 }
 
 function giveHelp(){
-    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Sell supplies^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^d: Discard items^n: Manage carts");
+    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Buy/sell supplies at the market^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^d: Discard items^n: Manage carts");
 }
 
 function goMining(){
@@ -871,7 +873,7 @@ function processTraining(){
         case 's':
             write("How many spearmen would you like to train?");
             trainItem = {
-                name: "spearmen",
+                name: "spearman",
                 variable: "spearmen",
                 neededItemVariable: "spears",
                 goldCost: 1,
@@ -883,7 +885,7 @@ function processTraining(){
         case 'o':
             write("How many swordsmen would you like to train?");
             trainItem = {
-                name: "swordsmen",
+                name: "swordsman",
                 variable: "swordsmen",
                 neededItemVariable: "swords",
                 goldCost: 1,
@@ -1184,10 +1186,10 @@ function processNightAttack(attackMessage){
         }
 
         if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
-            attackMessage = "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + " ogres.^^Your armies successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + " archers.";
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
         }
         else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
-            attackMessage = "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + " ogres.^^Your armies successfully defended against the attack and you lost no troops.";
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack and you lost no troops.^^";
         }
         else{
             var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
@@ -1204,7 +1206,7 @@ function processNightAttack(attackMessage){
             stone -= stoneStolen;
             food -= foodStolen;
 
-            attackMessage = "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + " ogres.^^The attacking army wiped out your troops and raided your stockpile. They made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen;
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^The attacking army wiped out your troops and raided your stockpile. They made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
         }
     }
     return attackMessage;
