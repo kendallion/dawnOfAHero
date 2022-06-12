@@ -9,6 +9,7 @@
 //attacking camps
 //horses & carts
 //better help menus
+//village defense
 //cookie saves
 //Change sky color based on time
 //better resource UI
@@ -56,6 +57,23 @@ var TrainItem = {
     barracksLevel: null
 };
 
+function EnemyCamp(id, level, visbilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food) {
+	this.id = id;
+	this.level = level;
+	this.visibilityLevel = visibilityLevel;
+	this.orcs = orcs;
+	this.ogres = ogres;
+	this.slingers = slingers;
+	this.gold = gold;
+	this.iron = iron;
+	this.vines = vines;
+	this.stone = stone;
+	this.wood = wood;
+	this.food = food;
+}
+
+var identifiedCamps = [];	
+
 var discardItem = null;
 var marketChoice = null;
 var marketItem = null;
@@ -79,6 +97,7 @@ var axes;
 var spears;
 var swords;
 var bows;
+var daggers;
 
 var foodProduction;
 
@@ -92,6 +111,7 @@ var woodcutters;
 var spearmen;
 var swordsmen;
 var archers;
+var scouts;
 
 //buildings
 var blacksmithLevel;
@@ -120,13 +140,15 @@ function updateResources(){
     document.getElementById('spearmen').textContent = spearmen;
     document.getElementById('swordsmen').textContent = swordsmen;
     document.getElementById('archers').textContent = archers;
-
+	document.getElementById('scouts').textContent = scouts;
+	
     document.getElementById('hoes').textContent = hoes;
     document.getElementById('picks').textContent = picks;
     document.getElementById('axes').textContent = axes;
     document.getElementById('spears').textContent = spears;
     document.getElementById('swords').textContent = swords;
     document.getElementById('bows').textContent = bows;
+	document.getElementById('daggers').textContent = daggers;
 
     document.getElementById('availableHousing').textContent = housing;
     document.getElementById('population').textContent = population;
@@ -206,6 +228,7 @@ function init(){
     spearmen = 2;
     swordsmen = 1;
     archers = 0;
+	scouts = 0;
 
     hoes = 2;
     picks = 1;
@@ -213,9 +236,10 @@ function init(){
     spears = 0;
     swords = 0;
     bows = 0;
+	daggers = 0;
 
-    blacksmithLevel = 0;
-    barracksLevel = 0;
+    blacksmithLevel = 3;
+    barracksLevel = 3;
     farm = 0;
     smallHouse = 1;
     largeHouse = 1;
@@ -237,48 +261,38 @@ function processInput(){
 
     switch(document.getElementById('inputTextBox').value) {
         case 'h':
-        case 'H':
             giveHelp();
             break;
-        case 'p':
-            idlePeasants += 1;
-            document.getElementById('idlePeasants').textContent = idlePeasants;
-            break;
         case 'm':
-        case 'M':
             goMining();
             break;
         case 'w':
-        case 'W':
             goWoodCutting();
             break;
         case 't':
             train();
             break;
         case 's':
-        case 'S':
             sleep();
             break;
         case 'b':
-        case 'B':
             build();
             break;
         case 'f':
-        case 'F':
             forge();
             break;
         case 'u':
-        case 'U':
             upgrade();
             break;
         case 'd':
-        case 'D':
             discard();
             break;
         case 'a':
-        case 'A':
             goToMarket();
             break;
+		case 'g':
+			goScouting();
+			break;
         default:
             write("Not a valid input!");
     }
@@ -644,7 +658,7 @@ function forge(){
         write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
-    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^s: Spear^w: Sword^b: Bow^h: Help^c: Cancel");
+    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^s: Spear^w: Sword^b: Bow^d: Dagger^h: Help^c: Cancel");
     nextFunction = processForging;
 }
 
@@ -737,6 +751,20 @@ function processForging(){
             };
             nextFunction = processForgingCount;
             break;
+		case 'd':
+            write("How many daggers would you like to forge?");
+            forgeItem = {
+                name: "dagger",
+                variable: "daggers",
+                stoneCost: 0,
+                woodCost: 1,
+                ironCost: 1,
+                vineCost: 0,
+                forgeTime: 2,
+                blacksmithLevel: 3
+            };
+            nextFunction = processForgingCount;
+            break;
         case 'c':
             write("Cancelled forging.^^What would you like to do next?");
             nextFunction = null;
@@ -825,7 +853,7 @@ function train(){
         write("You do not have any idle peasants that can be trained.^^What would you like to do next?");
         return;
     }
-    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^h: Help^c: Cancel");
+    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^u: Scout^h: Help^c: Cancel");
     nextFunction = processTraining;
 }
 
@@ -903,6 +931,18 @@ function processTraining(){
                 goldCost: 2,
                 trainTime: 2,
                 barracksLevel: 2
+            };
+            nextFunction = processTrainingCount;
+            break;
+		case 'u':
+            write("How many scouts would you like to train?");
+            trainItem = {
+                name: "scout",
+                variable: "scouts",
+                neededItemVariable: "daggers",
+                goldCost: 2,
+                trainTime: 2,
+                barracksLevel: 3
             };
             nextFunction = processTrainingCount;
             break;
@@ -1210,4 +1250,65 @@ function processNightAttack(attackMessage){
         }
     }
     return attackMessage;
+}
+
+function goScouting() {
+	if (time > 60) {
+        write("It's too late to scout for enemy camps.^^What would you like to do next?");
+        return;
+    }
+    if(scouts == 0) {
+        write("You do not have any scouts. Train some at the barracks to scout for enemy camps.^^What would you like to do next?");
+        return;
+    }
+    write("How many scouts would you like to send?");
+    nextFunction = processScoutingCount;
+}
+
+function processScoutingCount() {
+	if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled scouting.^^What would you like to do next?")
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var deployedScouts = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(deployedScouts)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+	if(deployedScouts > scouts) {
+		write("You do not have that many scouts.^^How many scouts would you like to send?");
+		document.getElementById('inputTextBox').value = "";
+		return;
+	}
+	
+	var scoutMessage = "";
+	var successChance = Math.random() + deployedScouts * .05;
+	if(successChance > 1) {
+		scoutMessage += "Your scouts did not find any enemy camps and have returned safely.";
+	}
+	else {
+		identifiedCamps.push(new EnemyCamp(
+			//(id, level, visbilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food)
+			identifiedCamps[identifiedCamps.length - 1].id + 1,	//id -- need to check if this is null for the first camp
+			Math.ceil((successChance - 1) * 10),				//level
+			2,													//visibilityLevel -- need to calculate how to tell the player the camp info
+			Math.random(),										//orcs -- need to calculate orcs based on level
+			Math.random(),										//ogres -- need to calculate ogres based on level
+			Math.random(),										//slingers -- need to calculate slingers based on level
+			Math.random(),										//gold -- need to calculate gold based on level
+			Math.random(),										//iron -- need to calculate iron based on level
+			Math.random(),										//vines -- need to calculate vines based on level
+			Math.random(),										//stone -- need to calculate stone based on level
+			Math.random(),										//wood -- need to calculate wood based on level
+			Math.random()										//food -- need to calculate food based on level
+		));
+		//need to add scouts losses
+		scoutMessage += "Your scouts identified a level x camp with y enemies and z resourcs.";
+	}
+	
+	write(scoutMessage);
+	
 }
