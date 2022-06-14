@@ -57,7 +57,7 @@ var TrainItem = {
     barracksLevel: null
 };
 
-function EnemyCamp(id, level, visbilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food) {
+function EnemyCamp(id, level, visibilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food) {
 	this.id = id;
 	this.level = level;
 	this.visibilityLevel = visibilityLevel;
@@ -72,7 +72,7 @@ function EnemyCamp(id, level, visbilityLevel, orcs, ogres, slingers, gold, iron,
 	this.food = food;
 }
 
-var identifiedCamps = [];	
+var identifiedCamps = [];
 
 var discardItem = null;
 var marketChoice = null;
@@ -141,7 +141,7 @@ function updateResources(){
     document.getElementById('swordsmen').textContent = swordsmen;
     document.getElementById('archers').textContent = archers;
 	document.getElementById('scouts').textContent = scouts;
-	
+
     document.getElementById('hoes').textContent = hoes;
     document.getElementById('picks').textContent = picks;
     document.getElementById('axes').textContent = axes;
@@ -228,7 +228,7 @@ function init(){
     spearmen = 2;
     swordsmen = 1;
     archers = 0;
-	scouts = 0;
+	scouts = 100;
 
     hoes = 2;
     picks = 1;
@@ -1283,32 +1283,34 @@ function processScoutingCount() {
 		document.getElementById('inputTextBox').value = "";
 		return;
 	}
-	
+
 	var scoutMessage = "";
 	var successChance = Math.random() + deployedScouts * .05;
-	if(successChance > 1) {
+	if(successChance < 1) {
 		scoutMessage += "Your scouts did not find any enemy camps and have returned safely.";
 	}
 	else {
+        var campLevel = Math.ceil((successChance - 1) * 10);
 		identifiedCamps.push(new EnemyCamp(
-			//(id, level, visbilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food)
-			identifiedCamps[identifiedCamps.length - 1].id + 1,	//id -- need to check if this is null for the first camp
-			Math.ceil((successChance - 1) * 10),				//level
-			2,													//visibilityLevel -- need to calculate how to tell the player the camp info
-			Math.random(),										//orcs -- need to calculate orcs based on level
-			Math.random(),										//ogres -- need to calculate ogres based on level
-			Math.random(),										//slingers -- need to calculate slingers based on level
-			Math.random(),										//gold -- need to calculate gold based on level
-			Math.random(),										//iron -- need to calculate iron based on level
-			Math.random(),										//vines -- need to calculate vines based on level
-			Math.random(),										//stone -- need to calculate stone based on level
-			Math.random(),										//wood -- need to calculate wood based on level
-			Math.random()										//food -- need to calculate food based on level
+			(identifiedCamps.length ? identifiedCamps[identifiedCamps.length - 1].id + 1 : 1),	//id
+			campLevel,				                                                            //level
+            Math.min(10, Math.ceil(deployedScouts / 5)),		                                //visibilityLevel
+            Math.ceil(Math.random() * campLevel**1.4 + 8),  	                                //orcs
+			Math.ceil(Math.random() * campLevel**1.4 + 2),		                                //ogres
+			Math.max(0, Math.ceil(Math.random() * campLevel**1.3 - 2)),                         //slingers
+			Math.ceil(Math.random() * campLevel**1.2 + 3),		                                //gold
+			Math.ceil(Math.random() * campLevel**1.2 + 4),		                                //iron
+			Math.ceil(Math.random() * campLevel**1.2 + 4),		                                //vines
+            Math.ceil(Math.random() * campLevel**1.3 + 25),		                                //stone
+			Math.ceil(Math.random() * campLevel**1.3 + 25),		                                //wood
+			Math.ceil(Math.random() * campLevel**1.2)   	                                    //food
 		));
 		//need to add scouts losses
 		scoutMessage += "Your scouts identified a level x camp with y enemies and z resourcs.";
 	}
-	
+
+    scoutMessage += "^^What would you like to do next?";
 	write(scoutMessage);
-	
+    document.getElementById('inputTextBox').value = "";
+    nextFunction = null;
 }
