@@ -292,6 +292,8 @@ function processInput(){
             break;
 		case 'g':
 			goScouting();
+        case 'l':
+            listCamps();
 			break;
         default:
             write("Not a valid input!");
@@ -1284,8 +1286,18 @@ function processScoutingCount() {
 		return;
 	}
 
-	var scoutMessage = "";
-	var successChance = Math.random() + deployedScouts * .05;
+    //1 in 10 chance scouts get attacks
+    if(Math.random() <= .1) {
+        var scoutsLost = Math.min(deployedScouts, Math.round((1 / ((Math.ceil(Math.random() * 10)) * 2)) * deployedScouts + 1));
+        scouts -= scoutsLost;
+        write("Your scouts were attacked by a band of Woodland Prowlers. You lost " + pluralize(scoutsLost, "scout") + ". Your men did not find a camp.^^What would you like to do next?")
+        document.getElementById('inputTextBox').value = "";
+        nextFunction = null;
+        return;
+    }
+
+    var scoutMessage = "";
+    var successChance = Math.random() + deployedScouts * .05;
 	if(successChance < 1) {
 		scoutMessage += "Your scouts did not find any enemy camps and have returned safely.";
 	}
@@ -1294,7 +1306,7 @@ function processScoutingCount() {
 		identifiedCamps.push(new EnemyCamp(
 			(identifiedCamps.length ? identifiedCamps[identifiedCamps.length - 1].id + 1 : 1),	//id
 			campLevel,				                                                            //level
-            Math.min(10, Math.ceil(deployedScouts / 5)),		                                //visibilityLevel
+            Math.min(5, Math.ceil(deployedScouts / 5)), 		                                //visibilityLevel
             Math.ceil(Math.random() * campLevel**1.4 + 8),  	                                //orcs
 			Math.ceil(Math.random() * campLevel**1.4 + 2),		                                //ogres
 			Math.max(0, Math.ceil(Math.random() * campLevel**1.3 - 2)),                         //slingers
@@ -1306,11 +1318,35 @@ function processScoutingCount() {
 			Math.ceil(Math.random() * campLevel**1.2)   	                                    //food
 		));
 		//need to add scouts losses
-		scoutMessage += "Your scouts identified a level x camp with y enemies and z resourcs.";
+		scoutMessage += "Your scouts identified a level " + identifiedCamps.slice[-1].level + " camp. Input 'l' to view its stats.";
 	}
 
     scoutMessage += "^^What would you like to do next?";
 	write(scoutMessage);
     document.getElementById('inputTextBox').value = "";
     nextFunction = null;
+}
+
+function listCamps() {
+    if(!identifiedCamps.length) {
+        write("You have not identified any camps. Use 'g' to scout the land for enemy camps.^^What would you like to do next?");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    var campMessage = "Identified Camps: ^^";
+    identifiedCamps.forEach(camp => {
+        if(camp.visibilityLevel == 1) campMessage += "Level: " + camp.level + "^No other information was gathered about this camp.";
+        else if(camp.visibilityLevel == 2) campMessage += "Level: " + camp.level + "^Enemies: At least " + ( (Math.floor((camp.orcs + camp.ogres + camp.slingers) / 10) * 10) - Math.random() * 5 ) + "^Building Materials: At least " + ( (Math.floor((camp.stone + camp.wood) / 10) * 10) - Math.random() * 10 ) + "^Resources: " + ( (Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 10) * 10) - Math.random() * 5 );
+        else if(camp.visibilityLevel == 3) campMessage += "Level: " + camp.level + "^Enemies: At least " + ( Math.floor((camp.orcs + camp.ogres + camp.slingers) / 5) * 5 ) + "^Building Materials: At least " + ( Math.floor((camp.stone + camp.wood) / 5) * 5 ) + "^Resources: " + ( Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 5) * 5 );
+        else if(camp.visibilityLevel == 4) campMessage += "Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2)));
+        else if(camp.visibilityLevel == 5) campMessage += "Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold;
+    });
+    //What would you like to do next? Remove a camp from your list, attack a camp, or cancel
+    write(campMessage);
+    document.getElementById('inputTextBox').value = "";
+}
+
+function viewCamp() {
+
 }
