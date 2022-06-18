@@ -73,6 +73,15 @@ function EnemyCamp(id, level, visibilityLevel, orcs, ogres, slingers, gold, iron
 }
 
 var identifiedCamps = [];
+selectedCampIndex = null;
+
+const soldierTypes = ["spearmen", "swordsmen", "archers"];
+var soldierTypeIndex = 0;
+var friendlyArmy = {
+    spearmen: null,
+    archers: null,
+    archers: null
+};
 
 var discardItem = null;
 var marketChoice = null;
@@ -1199,70 +1208,7 @@ function processNightAttack(attackMessage){
     //attackChance = 1; //DEBUG
     if(attackChance > day) return attackMessage;
     else{
-        var enemyOrcs = Math.ceil((Math.random() * (day / 2)**1.5) + 2);
-        var enemyOgres = Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4));
-        var enemyPower = enemyOrcs + enemyOgres * 2;
-        var friendlyPower = spearmen + swordsmen * 2 + archers / 2;
-        var lostSpearmen = 0;
-        var lostSwordsmen = 0;
-        var lostArchers = 0;
-
-        enemyPower -= Math.ceil(archers * (Math.random() * .15 + .25));
-
-        if(enemyPower > friendlyPower){
-            enemyPower -= friendlyPower;
-            spearmen = 0;
-            swordsmen = 0;
-            archers = 0;
-            friendlyPower = 0;
-        }
-        else{
-            for(var i=1;i<enemyPower;i++){
-                if(i % 3 == 0){
-                    if(swordsmen - lostSwordsmen > 0) lostSwordsmen++;
-                    else if(spearmen - lostSpearmen > 0) lostSpearmen++;
-                    else if(archers - lostArchers > 0) lostArchers++;
-                }
-                else if(i % 5 == 0){
-                    if(archers - lostArchers > 0) lostarchers++;
-                    else if(spearmen - lostSpearmen > 0) lostSpearmen++;
-                    else if(swordsmen - lostSwordsmen > 0) lostSwordsmen++;
-                }
-                else{
-                    if(spearmen - lostSpearmen > 0) lostSpearmen++;
-                    else if(archers - lostArchers > 0) lostArchers ++;
-                    else if(swordsmen - lostSwordsmen > 0 && Math.random() > .5) lostSwordsmen ++;
-                }
-            }
-            spearmen -= lostSpearmen;
-            swordsmen -= lostSwordsmen;
-            archers -= lostArchers;
-            enemyPower = 0;
-        }
-
-        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
-            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
-        }
-        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
-            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack and you lost no troops.^^";
-        }
-        else{
-            var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
-            var ironStolen = Math.min(iron,Math.round(enemyPower / 10 * 2));
-            var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 2));
-            var woodStolen = Math.min(wood,Math.round(enemyPower / 10 * 1));
-            var stoneStolen = Math.min(stone,Math.round(enemyPower / 10 * 1));
-            var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 1));
-
-            gold -= goldStolen;
-            iron -= ironStolen;
-            vines -= vinesStolen;
-            wood -= woodStolen;
-            stone -= stoneStolen;
-            food -= foodStolen;
-
-            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^The attacking army wiped out your troops and raided your stockpile. They made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
-        }
+        attackMessage += fight(false, spearmen, swordsmen, archers, Math.ceil((Math.random() * (day / 2)**1.5) + 2), Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4), 0));
     }
     return attackMessage;
 }
@@ -1397,17 +1343,162 @@ function selectCampAttack(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var index = identifiedCamps.findIndex(camp => camp.id == id);
-    if(index == -1){
+    selectedCampIndex = identifiedCamps.findIndex(camp => camp.id == id);
+    if(selectedCampIndex == -1){
         write("You have not identified a camp with that Id. Please try again.");
         document.getElementById('inputTextBox').value = "";
     }
     else{
-        //all attack logic will go here
-        //need to build out separate function to handle all fighting, and move the night attack fighting into there
-        write("You attacked a camp!");
+        write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
         document.getElementById('inputTextBox').value = "";
+        nextFunction = sendArmyToCamp;
+    }
+}
+
+function sendArmyToCamp(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled camp attack.^^What would you like to do next?")
         nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var count = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(count)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    friendlyArmy[soldierTypes[soldierTypeIndex]] = count;
+    document.getElementById('inputTextBox').value = "";
+
+    if(soldierTypeIndex < soldierTypes.length - 1) {
+        soldierTypeIndex ++;
+        write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
+        return;
+    }
+    else {
+        write(fight(true, friendlyArmy.spearmen, friendlyArmy.Swordsmen, friendlyArmy.archers, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
+        write("You're sending " + pluralize(friendlyArmy.spearmen, "spearman") + ", " + pluralize(friendlyArmy.swordsmen, "swordsman") + ", and " + pluralize(friendlyArmy.archers, "archer") + ".");
+    }
+
+    /*nextFunction = null;
+    soldierTypeIndex = 0;
+    friendlyArmy = {
+        spearmen: null,
+        swordsmen: null,
+        arhcers: null
+    };*/
+}
+
+function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArchers, deployedOrcs, deployedOgres, deployedSlingers){
+    //no support for slingers yet
+    var enemyPower = deployedOrcs + deployedOgres * 2;
+    var friendlyPower = deployedSpearmen + deployedSwordsmen * 2 + deployedArchers / 2;
+    var lostSpearmen = 0;
+    var lostSwordsmen = 0;
+    var lostArchers = 0;
+
+    if(playerOffense) friendlyPower -= Math.ceil(archers * (Math.random() * .10 + .25));
+    else enemyPower -= Math.ceil(archers * (Math.random() * .15 + .25));
+
+    if(enemyPower > friendlyPower){
+        enemyPower -= friendlyPower;
+        lostSpearmen = 0;
+        lostSwordsmen = 0;
+        lostArchers = 0;
+        friendlyPower = 0;
+        //need to calculate the losses for the enemy similar to the below, and modify the object
+        //also consider upping the visibility level on the camp if you attack it
+    }
+    else {
+        for(var i=1;i<enemyPower;i++){
+            if(i % 3 == 0){
+                if(deployedSwordsmen - lostSwordsmen > 0) lostSwordsmen++;
+                else if(deployedSpearmen - lostSpearmen > 0) lostSpearmen++;
+                else if(deployedArchers - lostArchers > 0) lostArchers++;
+            }
+            else if(i % 5 == 0){
+                if(deployedArchers - lostArchers > 0) lostarchers++;
+                else if(deployedSpearmen - lostSpearmen > 0) lostSpearmen++;
+                else if(deployedSwordsmen - lostSwordsmen > 0) lostSwordsmen++;
+            }
+            else{
+                if(deployedSpearmen - lostSpearmen > 0) lostSpearmen++;
+                else if(deployedArchers - lostArchers > 0) lostArchers ++;
+                else if(deployedSwordsmen - lostSwordsmen > 0 && Math.random() > .5) lostSwordsmen ++;
+            }
+        }
+        spearmen -= lostSpearmen;
+        swordsmen -= lostSwordsmen;
+        archers -= lostArchers;
+        enemyPower = 0;
+    }
+
+    if(playerOffense) { //player attacks a camp
+        /*
+        Cases:
+            Defeat camp, lose no troops
+            Defeat camp, lose some troops
+            Lose attack, lose all troops
+            Lose attack, lose some troops
+        Only gather resources if you defeat the camp
+        Note: may want to split up attack power and carry capacity for when we add carts
+        */
+        var camp = identifiedCamps[selectedCampIndex];
+        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
+            attackMessage += "Your armies successfully destroyed the camp, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
+            //You collected the following items...
+            //do we need to consider the player having another chance to raid the empty camp and take the other resources?
+        }
+        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
+            attackMessage += "Your armies successfully destroyed the camp and you lost no troops.^^";
+            //You also collected the following items...
+            //do we need to consider the player having another chance to raid the empty camp and take the other resources?
+        }
+        else{
+            //need to do this, but from the perspective of the player taking resources
+            /*var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
+            var ironStolen = Math.min(iron,Math.round(enemyPower / 10 * 2));
+            var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 2));
+            var woodStolen = Math.min(wood,Math.round(enemyPower / 10 * 1));
+            var stoneStolen = Math.min(stone,Math.round(enemyPower / 10 * 1));
+            var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 1));
+
+            gold -= goldStolen;
+            iron -= ironStolen;
+            vines -= vinesStolen;
+            wood -= woodStolen;
+            stone -= stoneStolen;
+            food -= foodStolen;*/
+
+            attackMessage += "You defeated the camp and made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
+        }
+    }
+    else { //player is attacked at night
+        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
+        }
+        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^Your armies successfully defended against the attack and you lost no troops.^^";
+        }
+        else{
+            var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
+            var ironStolen = Math.min(iron,Math.round(enemyPower / 10 * 2));
+            var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 2));
+            var woodStolen = Math.min(wood,Math.round(enemyPower / 10 * 1));
+            var stoneStolen = Math.min(stone,Math.round(enemyPower / 10 * 1));
+            var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 1));
+
+            gold -= goldStolen;
+            iron -= ironStolen;
+            vines -= vinesStolen;
+            wood -= woodStolen;
+            stone -= stoneStolen;
+            food -= foodStolen;
+
+            attackMessage += "You were attacked by a band of " + enemyOrcs + " orcs and " + pluralize(enemyOgres, "ogre") + ".^^The attacking army wiped out your troops and raided your stockpile. They made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
+        }
     }
 }
 
