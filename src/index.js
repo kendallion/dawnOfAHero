@@ -292,6 +292,7 @@ function processInput(){
             break;
 		case 'g':
 			goScouting();
+            break;
         case 'l':
             listCamps();
 			break;
@@ -1046,6 +1047,10 @@ function processDiscarding(){
             nextFunction = null;
             document.getElementById('inputTextBox').value = "";
             return;
+        default:
+            write("Not a valid choice. Please try again.");
+            document.getElementById('inputTextBox').value = "";
+            return;
     }
     write("What quantity of " + discardItem + " would you like to discard?");
     nextFunction = processDiscardingCount;
@@ -1105,6 +1110,10 @@ function marketBuyOrSell(){
             nextFunction = null;
             document.getElementById('inputTextBox').value = "";
             return;
+        default:
+            write("Not a valid choice. Please try again.");
+            document.getElementById('inputTextBox').value = "";
+            return;
     }
     nextFunction = marketItemChoice;
     document.getElementById('inputTextBox').value = "";
@@ -1127,6 +1136,10 @@ function marketItemChoice(){
         case 'c':
             write("Cancelled market action.^^What would you like to do next?");
             nextFunction = null;
+            document.getElementById('inputTextBox').value = "";
+            return;
+        default:
+            write("Not a valid choice. Please try again.");
             document.getElementById('inputTextBox').value = "";
             return;
     }
@@ -1286,10 +1299,11 @@ function processScoutingCount() {
 		return;
 	}
 
-    //1 in 10 chance scouts get attacks
+    //1 in 10 chance scouts get attacked
     if(Math.random() <= .1) {
         var scoutsLost = Math.min(deployedScouts, Math.round((1 / ((Math.ceil(Math.random() * 10)) * 2)) * deployedScouts + 1));
         scouts -= scoutsLost;
+        updateResources();
         write("Your scouts were attacked by a band of Woodland Prowlers. You lost " + pluralize(scoutsLost, "scout") + ". Your men did not find a camp.^^What would you like to do next?")
         document.getElementById('inputTextBox').value = "";
         nextFunction = null;
@@ -1318,7 +1332,7 @@ function processScoutingCount() {
 			Math.ceil(Math.random() * campLevel**1.2)   	                                    //food
 		));
 		//need to add scouts losses
-		scoutMessage += "Your scouts identified a level " + identifiedCamps.slice[-1].level + " camp. Input 'l' to view its stats.";
+		scoutMessage += "Your scouts identified a level " + identifiedCamps.slice(-1)[0].level + " camp. Input 'l' to view its stats.";
 	}
 
     scoutMessage += "^^What would you like to do next?";
@@ -1336,17 +1350,90 @@ function listCamps() {
 
     var campMessage = "Identified Camps: ^^";
     identifiedCamps.forEach(camp => {
-        if(camp.visibilityLevel == 1) campMessage += "Level: " + camp.level + "^No other information was gathered about this camp.";
-        else if(camp.visibilityLevel == 2) campMessage += "Level: " + camp.level + "^Enemies: At least " + ( (Math.floor((camp.orcs + camp.ogres + camp.slingers) / 10) * 10) - Math.random() * 5 ) + "^Building Materials: At least " + ( (Math.floor((camp.stone + camp.wood) / 10) * 10) - Math.random() * 10 ) + "^Resources: " + ( (Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 10) * 10) - Math.random() * 5 );
-        else if(camp.visibilityLevel == 3) campMessage += "Level: " + camp.level + "^Enemies: At least " + ( Math.floor((camp.orcs + camp.ogres + camp.slingers) / 5) * 5 ) + "^Building Materials: At least " + ( Math.floor((camp.stone + camp.wood) / 5) * 5 ) + "^Resources: " + ( Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 5) * 5 );
-        else if(camp.visibilityLevel == 4) campMessage += "Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2)));
-        else if(camp.visibilityLevel == 5) campMessage += "Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold;
+        if(camp.visibilityLevel == 1) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^No other information was gathered about this camp.";
+        else if(camp.visibilityLevel == 2) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Enemies: At least " + ( (Math.floor((camp.orcs + camp.ogres + camp.slingers) / 10) * 10) - Math.round(Math.random() * 5) ) + "^Building Materials: At least " + ( (Math.floor((camp.stone + camp.wood) / 10) * 10) - Math.round(Math.random() * 10) ) + "^Resources: At least " + ( (Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 10) * 10) - Math.round(Math.random() * 5) + "^^");
+        else if(camp.visibilityLevel == 3) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Enemies: At least " + ( Math.floor((camp.orcs + camp.ogres + camp.slingers) / 5) * 5 ) + "^Building Materials: At least " + ( Math.floor((camp.stone + camp.wood) / 5) * 5 ) + "^Resources: " + ( Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 5) * 5) + "^^";
+        else if(camp.visibilityLevel == 4) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2))) + "^^";
+        else if(camp.visibilityLevel == 5) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold + "^^";
     });
-    //What would you like to do next? Remove a camp from your list, attack a camp, or cancel
+    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^c: Cancel";
     write(campMessage);
+    document.getElementById('inputTextBox').value = "";
+    nextFunction = chooseCampAction;
+}
+
+function chooseCampAction() {
+    switch(document.getElementById('inputTextBox').value) {
+        case 'a':
+            write("Which camp would you like to attack? Select by Id.");
+            nextFunction = selectCampAttack;
+            break;
+        case 'r':
+            write("Which camp would you like to remove from your list? Select by ID.");
+            nextFunction = selectCampRemoval;
+            break;
+        case 'c':
+            write("Cancelled camp action.^^What would you like to do next?");
+            nextFunction = null;
+            break;
+        default:
+            write("Not a valid choice. Please try again.");
+            document.getElementById('inputTextBox').value = "";
+            return;
+    }
     document.getElementById('inputTextBox').value = "";
 }
 
-function viewCamp() {
+function selectCampAttack(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled camp attack.^^What would you like to do next?")
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var id = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(id)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var index = identifiedCamps.findIndex(camp => camp.id == id);
+    if(index == -1){
+        write("You have not identified a camp with that Id. Please try again.");
+        document.getElementById('inputTextBox').value = "";
+    }
+    else{
+        //all attack logic will go here
+        //need to build out separate function to handle all fighting, and move the night attack fighting into there
+        write("You attacked a camp!");
+        document.getElementById('inputTextBox').value = "";
+        nextFunction = null;
+    }
+}
+
+function selectCampRemoval(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled camp removal.^^What would you like to do next?")
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var id = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(id)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var index = identifiedCamps.findIndex(camp => camp.id == id);
+    if(index == -1){
+        write("You have not identified a camp with that Id. Please try again.");
+        document.getElementById('inputTextBox').value = "";
+    }
+    else{
+        identifiedCamps.splice(index, 1);
+        write("Removed camp of Id " + id + ". ^^What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^c: Cancel");
+        document.getElementById('inputTextBox').value = "";
+        nextFunction = chooseCampAction;
+    }
 
 }
