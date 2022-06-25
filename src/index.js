@@ -247,7 +247,7 @@ function init(){
     food = 5;
 
     //debug
-    //food = 500
+    food = 500;
 
     idlePeasants = 4;
     farmers = 1;
@@ -259,10 +259,10 @@ function init(){
 	scouts = 0;
 
     //debug
-    //spearmen = 100;
-    //swordsmen = 100;
-    //archers = 100;
-    //scouts = 100;
+    spearmen = 100;
+    swordsmen = 100;
+    archers = 100;
+    scouts = 100;
 
     hoes = 2;
     picks = 1;
@@ -272,14 +272,17 @@ function init(){
     bows = 0;
 	daggers = 0;
 
-    blacksmithLevel = 3;
-    barracksLevel = 3;
+    blacksmithLevel = 0;
+    barracksLevel = 1;
     farm = 0;
     smallHouse = 1;
     largeHouse = 1;
     stable = 0;
     stockpile = 1;
     market = 0;
+
+    //debug
+    stockpile = 10;
 
     updateResources();
     //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
@@ -1321,7 +1324,7 @@ function listCamps() {
 
     var campMessage = "Identified Camps: ^^";
     identifiedCamps.forEach(camp => {
-        if(camp.visibilityLevel == 1) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^No other information was gathered about this camp.";
+        if(camp.visibilityLevel == 1) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^No other information was gathered about this camp.^^";
         else if(camp.visibilityLevel == 2) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Enemies: At least " + ( (Math.floor((camp.orcs + camp.ogres + camp.slingers) / 10) * 10) - Math.round(Math.random() * 5) ) + "^Building Materials: At least " + ( (Math.floor((camp.stone + camp.wood) / 10) * 10) - Math.round(Math.random() * 10) ) + "^Resources: At least " + ( (Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 10) * 10) - Math.round(Math.random() * 5) + "^^");
         else if(camp.visibilityLevel == 3) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Enemies: At least " + ( Math.floor((camp.orcs + camp.ogres + camp.slingers) / 5) * 5 ) + "^Building Materials: At least " + ( Math.floor((camp.stone + camp.wood) / 5) * 5 ) + "^Resources: " + ( Math.floor((camp.iron + camp.vines + camp.gold + camp.food) / 5) * 5) + "^^";
         else if(camp.visibilityLevel == 4) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2))) + "^^";
@@ -1471,7 +1474,7 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             camp.ogres -= lostOgres;
             camp.slingers -= lostSlingers;
         }
-        enemyPower = enemyPower - lostOrcs - lostOgres * 2 - lostSlingers / 2;
+        enemyPower = max(1, enemyPower - lostOrcs - lostOgres * 2 - lostSlingers / 2);
 
         spearmen -= deployedSpearmen;
         swordsmen -= deployedSwordsmen;
@@ -1531,12 +1534,35 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             //need to use carryCapacity instead of power here
             //also, make it a for loop like troop loses
             //also, make sure we don't overflow the stockpile. take what we can and then leave the rest to gather later
-            var goldStolen = Math.min(camp.gold,Math.round(friendlyPower / 10 * 3));
+            /*var goldStolen = Math.min(camp.gold,Math.round(friendlyPower / 10 * 3));
             var ironStolen = Math.min(camp.iron,Math.round(friendlyPower / 10 * 2));
             var vinesStolen = Math.min(camp.vines,Math.round(friendlyPower / 10 * 2));
             var woodStolen = Math.min(camp.wood,Math.round(friendlyPower / 10 * 1));
             var stoneStolen = Math.min(camp.stone,Math.round(friendlyPower / 10 * 1));
-            var foodStolen = Math.min(camp.food,Math.round(friendlyPower / 10 * 1));
+            var foodStolen = Math.min(camp.food,Math.round(friendlyPower / 10 * 1));*/
+
+            var foodStolen = camp.food;
+            var goldStolen = camp.gold;
+            var ironStolen = camp.iron;
+            var vinesStolen = camp.vines;
+            var woodStolen = camp.wood;
+            var stoneStolen = camp.stone;
+
+            var maxCarry = Math.round(Math.min(friendlyPower, storageLeft()));
+            var totalStolen = 0;
+
+            if(totalStolen + camp.food > maxCarry) foodStolen = maxCarry - totalStolen;
+            totalStolen += foodStolen;
+            if(totalStolen + camp.gold > maxCarry) goldStolen = maxCarry - totalStolen;
+            totalStolen += goldStolen;
+            if(totalStolen + camp.iron > maxCarry) ironStolen = maxCarry - totalStolen;
+            totalStolen += ironStolen;
+            if(totalStolen + camp.vines > maxCarry) vinesStolen = maxCarry - totalStolen;
+            totalStolen += vinesStolen;
+            if(totalStolen + camp.wood > maxCarry) woodStolen = maxCarry - totalStolen;
+            totalStolen += woodStolen;
+            if(totalStolen + camp.stone > maxCarry) stoneStolen = maxCarry - totalStolen;
+            totalStolen += stoneStolen;
 
             camp.gold -= goldStolen;
             camp.iron -= ironStolen;
