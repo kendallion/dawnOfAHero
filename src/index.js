@@ -9,6 +9,7 @@
 //attacking camps - DONE
 //horses & carts
 //better help menus
+//first few days tutorial
 //village defense
 //cookie saves
 //Change sky color based on time
@@ -48,7 +49,7 @@ var forgeItem = {
     forgeLevel: null
 };
 
-var TrainItem = {
+var trainItem = {
     name: null,
     variable: null,
     neededItemVariable: null,
@@ -73,22 +74,23 @@ function EnemyCamp(id, level, visibilityLevel, orcs, ogres, slingers, gold, iron
 }
 
 var identifiedCamps = [];
-selectedCampIndex = null;
+var campAction = null;
+var selectedCampIndex = null;
 
 //debug
 identifiedCamps.push(new EnemyCamp(
-    1,	//id
-    4,				                                                            //level
+    1,	                                    //id
+    4,				                        //level
     2, 		                                //visibilityLevel
     5,  	                                //orcs
     3,		                                //ogres
-    2,                         //slingers
+    2,                                      //slingers
     3,		                                //gold
     4,		                                //iron
     5,		                                //vines
     14,		                                //stone
     12,		                                //wood
-    3   	                                    //food
+    3   	                                //food
 ));
 
 const soldierTypes = ["spearmen", "swordsmen", "archers"];
@@ -1330,7 +1332,7 @@ function listCamps() {
         else if(camp.visibilityLevel == 4) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2))) + "^^";
         else if(camp.visibilityLevel == 5) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold + "^^";
     });
-    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^c: Cancel";
+    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^G: Gather resources from a defeated camp^c: Cancel";
     write(campMessage);
     document.getElementById('inputTextBox').value = "";
     nextFunction = chooseCampAction;
@@ -1345,6 +1347,10 @@ function chooseCampAction() {
         case 'r':
             write("Which camp would you like to remove from your list? Select by ID.");
             nextFunction = selectCampRemoval;
+            break;
+        case 'g':
+            write("Which camp would you like to gather resources from? Select by ID.");
+            nextFunction = selectCampGather;
             break;
         case 'c':
             write("Cancelled camp action.^^What would you like to do next?");
@@ -1376,16 +1382,53 @@ function selectCampAttack(){
         write("You have not identified a camp with that Id. Please try again.");
         document.getElementById('inputTextBox').value = "";
     }
+    else if(identifiedCamps[selectedCampIndex].orcs + identifiedCamps[selectedCampIndex].ogres + identifiedCamps[selectedCampIndex].slingers < 1){
+        write("You have already defeated this camp, but you can still send your army to gather resources from it.^^How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
+        document.getElementById('inputTextBox').value = "";
+        campAction = "gather";
+        nextFunction = sendArmyToCamp;
+    }
     else{
         write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
         document.getElementById('inputTextBox').value = "";
+        campAction = "attack";
+        nextFunction = sendArmyToCamp;
+    }
+}
+
+function selectCampGather(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled resource gathering.^^What would you like to do next?")
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var id = parseInt(document.getElementById('inputTextBox').value);
+    if(isNaN(id)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    selectedCampIndex = identifiedCamps.findIndex(camp => camp.id == id);
+    if(selectedCampIndex == -1){
+        write("You have not identified a camp with that Id. Please try again.");
+        document.getElementById('inputTextBox').value = "";
+    }
+    else if(identifiedCamps[selectedCampIndex].orcs + identifiedCamps[selectedCampIndex].ogres + identifiedCamps[selectedCampIndex].slingers > 0){
+        write("You have not yet defeated this camp. You must select a camp you have already attacked and defeated.");
+        document.getElementById('inputTextBox').value = "";
+    }
+    else{
+        write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send to gather resources?");
+        document.getElementById('inputTextBox').value = "";
+        campAction = "gather";
         nextFunction = sendArmyToCamp;
     }
 }
 
 function sendArmyToCamp(){
     if(document.getElementById('inputTextBox').value == 'c'){
-        write("Cancelled camp attack.^^What would you like to do next?")
+        write("Cancelled camp action.^^What would you like to do next?")
         nextFunction = null;
         document.getElementById('inputTextBox').value = "";
         return;
@@ -1411,8 +1454,8 @@ function sendArmyToCamp(){
         return;
     }
     else {
-        write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
-        //write("You're sending " + pluralize(friendlyArmy.spearmen, "spearman") + ", " + pluralize(friendlyArmy.swordsmen, "swordsman") + ", and " + pluralize(friendlyArmy.archers, "archer") + ".");
+        if(campAction == "attack") write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
+        else write(gatherCampResources(friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers))
     }
 
     nextFunction = null;
@@ -1502,6 +1545,10 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
                 else if(deployedSwordsmen - lostSwordsmen > 0 && Math.random() > .8) lostSwordsmen ++;
             }
         }
+        deployedSpearmen -= lostSpearmen;
+        deployedSwordsmen -= lostSwordsmen;
+        deployedArchers -= lostArchers;
+
         spearmen -= lostSpearmen;
         swordsmen -= lostSwordsmen;
         archers -= lostArchers;
@@ -1530,71 +1577,17 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             fightMessage += "Your army was defeated by the camp. You were able to kill " + pluralize(lostOrcs, "orc") + ", " + pluralize(lostOgres, "ogre") + ", and " + pluralize(lostSlingers, "slinger") + ".^^";
             if(camp.visibilityLevel < 5) camp.visibilityLevel ++;
         }
+
         if(victory){
-            //need to use carryCapacity instead of power here
-            //also, make it a for loop like troop loses
-            //also, make sure we don't overflow the stockpile. take what we can and then leave the rest to gather later
-            /*var goldStolen = Math.min(camp.gold,Math.round(friendlyPower / 10 * 3));
-            var ironStolen = Math.min(camp.iron,Math.round(friendlyPower / 10 * 2));
-            var vinesStolen = Math.min(camp.vines,Math.round(friendlyPower / 10 * 2));
-            var woodStolen = Math.min(camp.wood,Math.round(friendlyPower / 10 * 1));
-            var stoneStolen = Math.min(camp.stone,Math.round(friendlyPower / 10 * 1));
-            var foodStolen = Math.min(camp.food,Math.round(friendlyPower / 10 * 1));*/
-
-            var foodStolen = camp.food;
-            var goldStolen = camp.gold;
-            var ironStolen = camp.iron;
-            var vinesStolen = camp.vines;
-            var woodStolen = camp.wood;
-            var stoneStolen = camp.stone;
-
-            var maxCarry = Math.round(Math.min(friendlyPower, storageLeft()));
-            var totalStolen = 0;
-
-            if(totalStolen + camp.food > maxCarry) foodStolen = maxCarry - totalStolen;
-            totalStolen += foodStolen;
-            if(totalStolen + camp.gold > maxCarry) goldStolen = maxCarry - totalStolen;
-            totalStolen += goldStolen;
-            if(totalStolen + camp.iron > maxCarry) ironStolen = maxCarry - totalStolen;
-            totalStolen += ironStolen;
-            if(totalStolen + camp.vines > maxCarry) vinesStolen = maxCarry - totalStolen;
-            totalStolen += vinesStolen;
-            if(totalStolen + camp.wood > maxCarry) woodStolen = maxCarry - totalStolen;
-            totalStolen += woodStolen;
-            if(totalStolen + camp.stone > maxCarry) stoneStolen = maxCarry - totalStolen;
-            totalStolen += stoneStolen;
-
-            camp.gold -= goldStolen;
-            camp.iron -= ironStolen;
-            camp.vines -= vinesStolen;
-            camp.wood -= woodStolen;
-            camp.stone -= stoneStolen;
-            camp.food -= foodStolen;
-
-            gold += goldStolen;
-            iron += ironStolen;
-            vines += vinesStolen;
-            wood += woodStolen;
-            stone += stoneStolen;
-            food += foodStolen;
-
-            fightMessage += "You made off with these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
-            if(camp.gold + camp.iron + camp.vines + camp.wood + camp.stone + camp.food > 0) {
-                fightMessage += "Your army was not able to carry away all of the camp's resources. The camp is still in your list and you can go back to gather the resources at any time.^^";
-                camp.visibilityLevel = 5;
-            }
-            else {
-                fightMessage += "Your armies gathered all the resources from the camp, and the camp has been removed from your list.^^";
-                identifiedCamps.splice(selectedCampIndex, 1);
-            }
+            fightMessage += (gatherCampResources(deployedSpearmen + deployedSwordsmen + deployedArchers));
         }
     }
     else { //player is attacked
         if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
-            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your armies successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
+            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
         }
         else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
-            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your armies successfully defended against the attack and you lost no troops.^^";
+            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack and you lost no troops.^^";
         }
         else{
             var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
@@ -1643,5 +1636,57 @@ function selectCampRemoval(){
         document.getElementById('inputTextBox').value = "";
         nextFunction = chooseCampAction;
     }
+}
 
+function gatherCampResources(carryCapacity){
+    var gatherMessage = "";
+    var camp = identifiedCamps[selectedCampIndex];
+
+    var foodStolen = camp.food;
+    var goldStolen = camp.gold;
+    var ironStolen = camp.iron;
+    var vinesStolen = camp.vines;
+    var woodStolen = camp.wood;
+    var stoneStolen = camp.stone;
+
+    var maxCarry = Math.round(Math.min(carryCapacity, storageLeft()));
+    var totalStolen = 0;
+
+    if(totalStolen + camp.food > maxCarry) foodStolen = maxCarry - totalStolen;
+    totalStolen += foodStolen;
+    if(totalStolen + camp.gold > maxCarry) goldStolen = maxCarry - totalStolen;
+    totalStolen += goldStolen;
+    if(totalStolen + camp.iron > maxCarry) ironStolen = maxCarry - totalStolen;
+    totalStolen += ironStolen;
+    if(totalStolen + camp.vines > maxCarry) vinesStolen = maxCarry - totalStolen;
+    totalStolen += vinesStolen;
+    if(totalStolen + camp.wood > maxCarry) woodStolen = maxCarry - totalStolen;
+    totalStolen += woodStolen;
+    if(totalStolen + camp.stone > maxCarry) stoneStolen = maxCarry - totalStolen;
+    totalStolen += stoneStolen;
+
+    camp.gold -= goldStolen;
+    camp.iron -= ironStolen;
+    camp.vines -= vinesStolen;
+    camp.wood -= woodStolen;
+    camp.stone -= stoneStolen;
+    camp.food -= foodStolen;
+
+    gold += goldStolen;
+    iron += ironStolen;
+    vines += vinesStolen;
+    wood += woodStolen;
+    stone += stoneStolen;
+    food += foodStolen;
+
+    gatherMessage += "Your army gathered these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
+    if(camp.gold + camp.iron + camp.vines + camp.wood + camp.stone + camp.food > 0) {
+        gatherMessage += "Your army was not able to carry away all of the camp's resources. The camp is still in your list and you can go back to gather the resources at any time.^^";
+        camp.visibilityLevel = 5;
+    }
+    else {
+        gatherMessage += "Your army gathered all the resources from the camp, and the camp has been removed from your list.^^";
+        identifiedCamps.splice(selectedCampIndex, 1);
+    }
+    return gatherMessage;
 }
