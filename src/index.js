@@ -8,6 +8,7 @@
 //scouting - DONE
 //attacking camps - DONE
 //horses & carts
+    //get horses from new peasants and scouting
 //better help menus
 //first few days tutorial
 //village defense
@@ -139,6 +140,11 @@ var spearmen;
 var swordsmen;
 var archers;
 var scouts;
+var horses;
+var horsemen;
+var idleCarts;
+var mineCarts;
+var woodCarts;
 
 //buildings
 var blacksmithLevel;
@@ -146,9 +152,9 @@ var barracks;
 var farm;
 var smallHouse;
 var largeHouse;
-var stable;
 var stockpile;
 var market;
+var stable;
 
 function updateResources(){
     population = idlePeasants + farmers + miners + woodcutters + spearmen + swordsmen + archers;
@@ -168,6 +174,8 @@ function updateResources(){
     document.getElementById('swordsmen').textContent = swordsmen;
     document.getElementById('archers').textContent = archers;
 	document.getElementById('scouts').textContent = scouts;
+    document.getElementById('horses').textContent = scouts;
+    document.getElementById('horsemen').textContent = scouts;
 
     document.getElementById('hoes').textContent = hoes;
     document.getElementById('picks').textContent = picks;
@@ -204,7 +212,7 @@ function storageLeft(){
 function foodProduction() { return Math.round(farmers + farmers * (farm / 5)); }
 function foodConsumption() { return Math.floor(population / 5); }
 
-  function pluralize(count, noun){
+function pluralize(count, noun){
       if(noun.endsWith('man')) return `${count} ${noun.slice(0,-3)}${count !== 1 ? 'men' : 'man'}`;
       else return `${count} ${noun}${count !== 1 ? 's' : ''}`;
   }
@@ -259,6 +267,8 @@ function init(){
     swordsmen = 1;
     archers = 0;
 	scouts = 0;
+    horses = 0;
+    horsemen = 0;
 
     //debug
     spearmen = 100;
@@ -492,7 +502,7 @@ function build(){
         write("It's too late to build anything right now.");
         return;
     }
-    write("What would you like to build?^b: Blacksmith^a: Barracks^s: Small House^l: Large House^m: Market^h: Help^c: Cancel");
+    write("What would you like to build?^b: Blacksmith^a: Barracks^s: Small House^l: Large House^m: Market^t: Stable^h: Help^c: Cancel");
     nextFunction = processBuilding;
 }
 
@@ -551,6 +561,16 @@ function processBuilding(){
                 buildTime: 4
             };
             break;
+        case 't':
+            buildItem = {
+                name: "stable",
+                variable: "stable",
+                woodCost: 150,
+                stoneCost: 50,
+                ironCost: 10,
+                buildTime: 4
+            };
+            break;
         case 'c':
             write("Cancelled build.^^What would you like to do next?");
             nextFunction = null;
@@ -562,18 +582,25 @@ function processBuilding(){
 
     var buildMessage = "";
 
-    if (buildItem.variable == blacksmithLevel ||
-        buildItem.variable == barracksLevel ||
-        buildItem.variable == market){
+    if ((buildItem.variable == "blacksmithLevel" && blacksmithLevel > 0) ||
+        (buildItem.variable == "barracksLevel" && barracksLevel > 0) ||
+        (buildItem.variable == "stable" && stable > 0)) {
             write("You already have a level " + window[buildItem.variable] + " " + buildItem.name + ". To upgrade your " + buildItem.name + ", choose \"upgrade\" (\"u\") at the main menu.^^What would you like to do next?");
             nextFunction = null;
             document.getElementById('inputTextBox').value = "";
             return;
-        }
+    }
+
+    if(buildItem.variable == market) {
+        write("You already have a market.^^What would you like to do next?");
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
 
     if(buildItem.woodCost > wood) buildMessage += "Not enough wood.^Required: " + buildItem.woodCost + "^Current: " + wood + "^^";
     if(buildItem.stoneCost > stone) buildMessage += "Not enough stone.^Required: " + buildItem.stoneCost + "^Current: " + stone + "^^";
-    if(buildItem.ironCost > wood) buildMessage += "Not enough iron.^Required: " + buildItem.ironCost + "^Current: " + iron + "^^";
+    if(buildItem.ironCost > iron) buildMessage += "Not enough iron.^Required: " + buildItem.ironCost + "^Current: " + iron + "^^";
     if(buildItem.buildTime + time > 64) buildMessage += "You don't have enough time to build a " + buildItem.name + ".^^";
 
     if(!buildMessage) {
@@ -646,6 +673,17 @@ function processUpgrading(){
                 upgradeTime: 4
             };
             break;
+        case 't':
+            upgradeItem = {
+                name: "stable",
+                variable: "stable",
+                woodCost: 100,
+                stoneCost: 25,
+                ironCost: 5,
+                maxLevel: null,
+                upgradeTime: 4
+            };
+            break;
         case 'c':
             write("Cancelled upgrade.^^What would you like to do next?");
             nextFunction = null;
@@ -662,8 +700,9 @@ function processUpgrading(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    if (upgradeItem.variable == blacksmithLevel ||
-        upgradeItem.variable == barracksLevel){
+    if ((upgradeItem.variable == "blacksmithLevel" && blacksmithLevel == 0) ||
+        (upgradeItem.variable == "barracksLevel" && barracksLevel == 0) ||
+        (upgradeItem.variable == "stable" && stable == 0)) {
             write("You do not have a  " + upgradeItem.name + " yet. To build a " + builditem.name + ", choose \"build\" (\"b\") at the main menu.^^What would you like to do next?");
             nextFunction = null;
             document.getElementById('inputTextBox').value = "";
