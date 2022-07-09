@@ -8,9 +8,9 @@
 //scouting - DONE
 //attacking camps - DONE
 //horses & carts
-    //get horses from new peasants and scouting -DONE
-    //add training for horses and carts
-    //add horses and carts to battles
+    //get horses from new villagers and scouting -DONE
+    //add training for horses and carts - DONE
+    //add horses and carts to battles - DONE
     //add carts to resource gathering
 //better help menus
 //first few days tutorial
@@ -62,6 +62,13 @@ var trainItem = {
     barracksLevel: null
 };
 
+var horseTrainItem = {
+    name: null,
+    variable: null,
+    requiredVillagerVariable: null,
+    requiredHorses: null
+};
+
 function EnemyCamp(id, level, visibilityLevel, orcs, ogres, slingers, gold, iron, vines, stone, wood, food) {
 	this.id = id;
 	this.level = level;
@@ -102,7 +109,9 @@ var soldierTypeIndex = 0;
 var friendlyArmy = {
     spearmen: null,
     archers: null,
-    archers: null
+    archers: null,
+    horsemen: null,
+    warCarts: null
 };
 
 var discardItem = null;
@@ -135,7 +144,7 @@ var foodProduction;
 //population
 var housing;
 var population;
-var idlePeasants;
+var idleVillagers;
 var farmers;
 var miners;
 var woodcutters;
@@ -145,10 +154,10 @@ var archers;
 var scouts;
 var idleHorses;
 var horsemen;
-var idleCarts;
 var mineCarts;
 var woodCarts;
-var farmHorses;
+var farmCarts;
+var warCarts;
 var horsePopulation;
 
 //buildings
@@ -162,9 +171,9 @@ var market;
 var stable;
 
 function updateResources(){
-    population = idlePeasants + farmers + miners + woodcutters + spearmen + swordsmen + archers;
+    population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers;
     housing = smallHouse * 5 + largeHouse * 10;
-    horsePopulation = idleHorses + horsemen + idleCarts + woodCarts + mineCarts + farmHorses;
+    horsePopulation = idleHorses + horsemen + woodCarts + mineCarts + farmCarts + warCarts;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
     document.getElementById('vines').textContent = vines;
@@ -172,7 +181,7 @@ function updateResources(){
     document.getElementById('gold').textContent = gold;
     document.getElementById('food').textContent = food;
 
-    document.getElementById('idlePeasants').textContent = idlePeasants;
+    document.getElementById('idleVillagers').textContent = idleVillagers;
     document.getElementById('farmers').textContent = farmers;
     document.getElementById('miners').textContent = miners;
     document.getElementById('woodcutters').textContent = woodcutters;
@@ -265,7 +274,7 @@ function init(){
     //debug
     food = 500;
 
-    idlePeasants = 4;
+    idleVillagers = 4;
     farmers = 1;
     miners = 2;
     woodcutters = 2;
@@ -275,10 +284,10 @@ function init(){
 	scouts = 0;
     idleHorses = 0;
     horsemen = 0;
-    idleCarts = 0;
-    woodCarts = 0;
     mineCarts = 0;
-    farmHorses = 0;
+    woodCarts = 0;
+    farmCarts = 0;
+    warCarts = 0;
 
     //debug
     spearmen = 100;
@@ -356,6 +365,9 @@ function processInput(){
         case 'l':
             listCamps();
 			break;
+        case 'r':
+            trainHorses();
+            break;
         default:
             write("Not a valid input!");
     }
@@ -363,7 +375,7 @@ function processInput(){
 }
 
 function giveHelp(){
-    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Buy/sell supplies at the market^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^d: Discard items^n: Manage carts");
+    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Buy/sell supplies at the market^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^d: Discard items^r: Train Horses");
 }
 
 function goMining(){
@@ -466,7 +478,7 @@ function sleep(){
         var newVillagerModifier = Math.round(Math.random() * 2.5);
         var newVillagers = Math.floor((housing - population) / 5 + newVillagerModifier);
         if(newVillagers + population > housing) newVillagers = housing - population;
-        idlePeasants += newVillagers;
+        idleVillagers += newVillagers;
         if (newVillagers > 0) {
             var newHorses = 0;
             for(i=1;i<newVillagers;i++) {
@@ -480,7 +492,7 @@ function sleep(){
     }
 
     //taxes
-    var taxes = Math.floor((idlePeasants + farmers + miners + woodcutters) / 5);
+    var taxes = Math.floor((idleVillagers + farmers + miners + woodcutters) / 5);
     gold += taxes;
     sleepMessage += "You collected " + taxes + " gold in taxes.^^";
 
@@ -950,8 +962,8 @@ function train(){
         write("It's too late to train troops or workers right now.^^What would you like to do next?");
         return;
     }
-    if(idlePeasants == 0) {
-        write("You do not have any idle peasants that can be trained.^^What would you like to do next?");
+    if(idleVillagers == 0) {
+        write("You do not have any idle villagers that can be trained.^^What would you like to do next?");
         return;
     }
     write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^u: Scout^h: Help^c: Cancel");
@@ -1093,8 +1105,8 @@ function processTrainingCount(){
         canTrain = false;
     }
 
-    if(idlePeasants < count){
-        trainError += "Not enough idle peasants to train.^Required: " + count + "^Curent: " + idlePeasants + "^^";
+    if(idleVillagers < count){
+        trainError += "Not enough idle villagers to train.^Required: " + count + "^Curent: " + idleVillagers + "^^";
         canTrain = false;
     }
 
@@ -1107,7 +1119,7 @@ function processTrainingCount(){
         time += trainItem.trainTime * count;
         gold -= trainItem.goldCost * count;
         window[trainItem.neededItemVariable] -= count;
-        idlePeasants -= count;
+        idleVillagers -= count;
         window[trainItem.variable] += count;
         updateResources();
         write("You have trained " + pluralize(count, trainItem.name) + ".^^What would you like to do next?");
@@ -1297,7 +1309,7 @@ function processNightAttack(attackMessage){
     //attackChance = 1; //DEBUG
     if(attackChance > day) return attackMessage;
     else{
-        attackMessage += fight(false, spearmen, swordsmen, archers, Math.ceil((Math.random() * (day / 2)**1.5) + 2), Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4)), 0);
+        attackMessage += fight(false, spearmen, swordsmen, archers, horsemen, 0, Math.ceil((Math.random() * (day / 2)**1.5) + 2), Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4)), 0);
     }
     return attackMessage;
 }
@@ -1520,8 +1532,8 @@ function sendArmyToCamp(){
         return;
     }
     else {
-        if(campAction == "attack") write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
-        else write(gatherCampResources(friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers))
+        if(campAction == "attack") write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, friendlyArmy.horsemen, friendlyArmy.warCarts, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
+        else write(gatherCampResources(friendlyArmy.spearmen + friendlyArmy.swordsmen + friendlyArmy.archers + friendlyArmy.horsemen + friendlyArmy.warCarts * 20))
     }
 
     nextFunction = null;
@@ -1529,18 +1541,21 @@ function sendArmyToCamp(){
     friendlyArmy = {
         spearmen: null,
         swordsmen: null,
-        arhcers: null
+        arhcers: null,
+        horsemen: null,
+        warCarts: null
     };
 }
 
-function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArchers, deployedOrcs, deployedOgres, deployedSlingers){
+function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArchers, deployedHorsemen, deployedWarCarts, deployedOrcs, deployedOgres, deployedSlingers){
     var fightMessage = "";
     var enemyPower = deployedOrcs + deployedOgres * 2 + deployedSlingers / 2;
-    var friendlyPower = deployedSpearmen + deployedSwordsmen * 2 + deployedArchers / 2;
+    var friendlyPower = deployedSpearmen + deployedSwordsmen * 2 + deployedArchers / 2 + deployedHorsemen * 4;
     console.log("Friendly Power: " + friendlyPower + "\nEnemy Power: " + enemyPower);
     var lostSpearmen = 0;
     var lostSwordsmen = 0;
     var lostArchers = 0;
+    var lostHorsemen = 0;
     var lostOrcs = 0;
     var lostOgres = 0;
     var lostSlingers = 0;
@@ -1555,8 +1570,6 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
         enemyPower -= Math.ceil(deployedArchers * (Math.random() * .15 + .25));
         friendlyPower -= Math.ceil(deployedSlingers * (Math.random() * .05 + .15));
     }
-    console.log("Friendly Power: " + friendlyPower + "\nEnemy Power: " + enemyPower);
-    console.log("Spearmen: " + deployedSpearmen + "\nSwordsmen: " + deployedSwordsmen + "\nArchers:" + deployedArchers);
 
     //if the enemy wins
     if(enemyPower > friendlyPower){
@@ -1588,6 +1601,7 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
         spearmen -= deployedSpearmen;
         swordsmen -= deployedSwordsmen;
         archers -= deployedArchers;
+        horsemen -= deployedHorsemen
         friendlyPower = 0;
     }
     //else if the player wins
@@ -1599,26 +1613,37 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
                 if(deployedSwordsmen - lostSwordsmen > 0) lostSwordsmen++;
                 else if(deployedSpearmen - lostSpearmen > 0) lostSpearmen++;
                 else if(deployedArchers - lostArchers > 0 && Math.random() > .2) lostArchers++;
+                else if(deployedHorsemen - lostHorsemen > 0 && Math.random() > .8) lostHorsemen++;
             }
             else if(i % 5 == 0){
                 if(deployedArchers - lostArchers > 0) lostArchers++;
                 else if(deployedSpearmen - lostSpearmen > 0 && Math.random() > .2) lostSpearmen++;
                 else if(deployedSwordsmen - lostSwordsmen > 0 && Math.random() > .4) lostSwordsmen++;
+                else if(deployedHorsemen - lostHorsemen > 0 && Math.random() > .8) lostHorsemen++;
+            }
+            else if(i & 8 == 0){
+                if(deployedHorsemen - lostHorsemen > 0) lostHorsemen ++;
+                else if(deployedSpearmen - lostSpearmen > 0 && Math.random() > .2) lostSpearmen++;
+                else if(deployedSwordsmen - lostSwordsmen > 0 && Math.random() > .4) lostSwordsmen++;
+                else if(deployedHorsemen - lostHorsemen > 0 && Math.random() > .8) lostHorsemen++;
             }
             else{
                 if(deployedSpearmen - lostSpearmen > 0 && Math.random() > .2) lostSpearmen++;
                 else if(deployedArchers - lostArchers > 0 && Math.random() > .4) lostArchers ++;
                 else if(deployedSwordsmen - lostSwordsmen > 0 && Math.random() > .8) lostSwordsmen ++;
+                else if(deployedHorsemen - lostHorsemen > 0 && Math.random() > .8) lostHorsemen ++;
             }
         }
         deployedSpearmen -= lostSpearmen;
         deployedSwordsmen -= lostSwordsmen;
         deployedArchers -= lostArchers;
+        deployedHorsemen -= lostHorsemen;
 
         spearmen -= lostSpearmen;
         swordsmen -= lostSwordsmen;
         archers -= lostArchers;
-        friendlyPower = friendlyPower - lostSpearmen - lostSwordsmen * 2 - lostArchers / 2;
+        horsemen -= lostHorsemen
+        friendlyPower = friendlyPower - lostSpearmen - lostSwordsmen * 2 - lostArchers / 2 - lostHorsemen * 4;
         enemyPower = 0;
         if(playerOffense) {
             camp.orcs = 0;
@@ -1630,11 +1655,11 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
     //calculate all resources down here
     if(playerOffense) { //player attacks a camp
         var victory;
-        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
-            fightMessage += "Your army successfully destroyed the camp, but you lost " + pluralize(lostSpearmen, "spearman") + ", " + pluralize(lostSwordsmen, "swordsman") + ", and " + pluralize(lostArchers, "archer") + ".^^";
+        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers + lostHorsemen) > 0){
+            fightMessage += "Your army successfully destroyed the camp, but you lost " + pluralize(lostSpearmen, "spearman") + ", " + pluralize(lostSwordsmen, "swordsman") + ", " + pluralize(lostArchers, "archer") + ", and " + pluralize(lostHorsemen, "horseman") + ".^^";
             victory = true;
         }
-        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
+        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers + lostHorsemen) == 0){
             fightMessage += "Your army successfully destroyed the camp and you lost no troops.^^";
             victory = true;
         }
@@ -1645,14 +1670,14 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
         }
 
         if(victory){
-            fightMessage += (gatherCampResources(deployedSpearmen + deployedSwordsmen + deployedArchers));
+            fightMessage += (gatherCampResources(deployedSpearmen + deployedSwordsmen + deployedArchers + deployedHorsemen + deployedWarCarts * 20));
         }
     }
     else { //player is attacked
-        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) > 0){
-            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack, but you lost " + lostSpearmen + " spearmen, " + lostSwordsmen + " swordsmen, and " + pluralize(lostArchers, "archer") + ".^^";
+        if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers + lostHorsemen) > 0){
+            fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack, but you lost " + pluralize(lostSpearmen, "spearman") + ", " + pluralize(lostSwordsmen, "swordsman") + ", " + pluralize(lostArchers, "archer") + ", and " + pluralize(lostHorsemen, "horseman") + ".^^";
         }
-        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers) == 0){
+        else if(enemyPower == 0 && (lostSpearmen + lostSwordsmen + lostArchers + lostHorsemen) == 0){
             fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack and you lost no troops.^^";
         }
         else{
@@ -1755,4 +1780,121 @@ function gatherCampResources(carryCapacity){
         identifiedCamps.splice(selectedCampIndex, 1);
     }
     return gatherMessage;
+}
+
+function trainHorses(){
+    if(idleHorses == 0){
+        write("You do not have any idle horses. You can get find horses while scouting, or new villagers may bring them when they move to your village.^^What would you like to do next?");
+        return;
+    }
+
+    write("What would you like to train?^o: Horseman^m: Mine cart^w: Wood cart^f: Farm cart^a: War cart");
+    nextFunction = processHorseTraining;
+}
+
+function processHorseTraining(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 'h':
+            write("I can help!");
+            break;
+        case 'o':
+            write("How many horsemen would you like to train?");
+            horseTrainItem = {
+                name: "horseman",
+                variable: "horsemen",
+                requiredVillagerVariable: "spearmen",
+                requiredHorses: 1
+            };
+            nextFunction = processHorseTrainingCount;
+            break;
+        case 'm':
+            write("How many mine carts would you like to train?");
+            horseTrainItem = {
+                name: "mine cart",
+                variable: "mineCarts",
+                requiredVillagerVariable: "miners",
+                requiredHorses: 2
+            };
+            nextFunction = processHorseTrainingCount;
+            break;
+        case 'w':
+            write("How many wood carts would you like to train?");
+            horseTrainItem = {
+                name: "wood cart",
+                variable: "woodCarts",
+                requiredVillagerVariable: "miners",
+                requiredHorses: 2
+            };
+            nextFunction = processHorseTrainingCount;
+            break;
+        case 'f':
+            write("How many farm carts would you like to train?");
+            horseTrainItem = {
+                name: "farm cart",
+                variable: "farmCarts",
+                requiredVillagerVariable: "farmers",
+                requiredHorses: 2
+            };
+            nextFunction = processHorseTrainingCount;
+            break;
+        case 'a':
+            write("How many war carts would you like to train?");
+            horseTrainItem = {
+                name: "war cart",
+                variable: "warCarts",
+                requiredVillagerVariable: null,
+                requiredHorses: 2
+            };
+            nextFunction = processHorseTrainingCount;
+            break;
+        case 'c':
+            write("Cancelled horse training.^^What would you like to do next?");
+            nextFunction = null;
+            break;
+        default:
+            write("Not a valid choice. Please try again.");
+            break;
+    }
+    document.getElementById('inputTextBox').value = "";
+}
+
+function processHorseTrainingCount(){
+    if(document.getElementById('inputTextBox').value == 'c'){
+        write("Cancelled training.^^What would you like to do next?")
+        nextFunction = null;
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+    var count = parseInt(document.getElementById('inputTextBox').value);
+    var canTrain = true;
+    var trainError = "";
+    if(isNaN(count)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return;
+    }
+
+    if(window[horseTrainItem.requiredVillagerVariable] < count){
+        trainError += "Not enough " + horseTrainItem.requiredVillagerVariable + " to train that many horses.^Required: " + count + "^Curent: " + window[horseTrainItem.requiredVillagerVariable] + "^^";
+        canTrain = false;
+    }
+
+    if(idleHorses < count * horseTrainItem.requiredHorses) {
+        trainError += "Not enough horses.^Required: " + count * horseTrainItem.requiredHorses + "^Current: " + idleHorses + "^^";
+        canTrain = false;
+    }
+
+    if(canTrain){
+        window[horseTrainItem.variable] += count;
+        window[horseTrainItem.requiredVillagerVariable] -= count;
+        idleHorses -= count * horseTrainItem.requiredHorses;
+        updateResources();
+        write("You have trained " + pluralize(count, horseTrainItem.name) + ".^^What would you like to do next?");
+        nextFunction = null;
+    }
+    else{
+        write(trainError + "What would you like to do next?");
+        nextFunction = null;
+    }
+    document.getElementById('inputTextBox').value = "";
 }
