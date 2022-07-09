@@ -104,7 +104,7 @@ identifiedCamps.push(new EnemyCamp(
     3   	                                //food
 ));
 
-const soldierTypes = ["spearmen", "swordsmen", "archers"];
+const soldierTypes = ["spearmen", "swordsmen", "archers", "horsemen", "war carts"];
 var soldierTypeIndex = 0;
 var friendlyArmy = {
     spearmen: null,
@@ -171,9 +171,9 @@ var market;
 var stable;
 
 function updateResources(){
-    population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers;
+    population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers + horsemen + mineCarts + farmCarts; //warCarts do not have population
     housing = smallHouse * 5 + largeHouse * 10;
-    horsePopulation = idleHorses + horsemen + woodCarts + mineCarts + farmCarts + warCarts;
+    horsePopulation = idleHorses + horsemen + woodCarts * 2 + mineCarts * 2 + farmCarts * 2 + warCarts * 2;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
     document.getElementById('vines').textContent = vines;
@@ -189,7 +189,14 @@ function updateResources(){
     document.getElementById('swordsmen').textContent = swordsmen;
     document.getElementById('archers').textContent = archers;
 	document.getElementById('scouts').textContent = scouts;
-    document.getElementById('horses').textContent = idleHorses;
+
+    document.getElementById('totalHorses').textContent = horsePopulation;
+    document.getElementById('availableStalls').textContent = stable * 5;
+    document.getElementById('idleHorses').textContent = idleHorses;
+    document.getElementById('farmCarts').textContent = farmCarts;
+    document.getElementById('mineCarts').textContent = mineCarts;
+    document.getElementById('woodCarts').textContent = woodCarts;
+    document.getElementById('warCarts').textContent = warCarts;
     document.getElementById('horsemen').textContent = horsemen;
 
     document.getElementById('hoes').textContent = hoes;
@@ -224,7 +231,7 @@ function storageLeft(){
     return stockpile * 250 - hoes - picks - axes - spears - swords - bows - stone  - wood - iron - vines - food;
 }
 
-function foodProduction() { return Math.round(farmers + farmers * (farm / 5)); }
+function foodProduction() { return Math.round(farmers + farmCarts * 3 + (farmers + farmCarts * 3) * (farm / 5)); }
 function foodConsumption() { return Math.floor(population / 5); }
 
 function pluralize(count, noun){
@@ -272,7 +279,7 @@ function init(){
     food = 5;
 
     //debug
-    food = 500;
+    food = 50;
 
     idleVillagers = 4;
     farmers = 1;
@@ -290,10 +297,14 @@ function init(){
     warCarts = 0;
 
     //debug
-    spearmen = 100;
-    swordsmen = 100;
-    archers = 100;
-    scouts = 100;
+    spearmen = 10;
+    swordsmen = 10;
+    archers = 10;
+    scouts = 10;
+    farmCarts = 2;
+    mineCarts = 2;
+    woodCarts = 2;
+    warCarts = 2;
 
     hoes = 2;
     picks = 1;
@@ -307,14 +318,15 @@ function init(){
     barracksLevel = 1;
     farm = 0;
     smallHouse = 1;
-    largeHouse = 100;
+    largeHouse = 1;
     stable = 0;
     stockpile = 1;
     market = 0;
 
     //debug
-    stockpile = 10;
-    stable = 5;
+    stockpile = 2;
+    stable = 4;
+    largeHouse = 3;
 
     updateResources();
     //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
@@ -387,8 +399,8 @@ function goMining(){
         write("Your stockpile is full and you cannot go mining.");
         return;
     }
-    var stoneGet = Math.floor(Math.random() * 13 + 10);
-    var ironGet = Math.floor(Math.random() * 11 - 5);
+    var stoneGet = Math.floor(Math.random() * 8 + 8);
+    var ironGet = Math.floor(Math.random() * 9 - 4);
     if(ironGet < 0) ironGet = 0;
 
     if(ironGet > storageLeft()) {
@@ -418,8 +430,8 @@ function goWoodCutting(){
         write("Your stockpile is full and you cannot go woodcutting.");
         return;
     }
-    var woodGet = Math.floor(Math.random() * 14 + 11);
-    var vineGet = Math.floor(Math.random() * 10 - 5);
+    var woodGet = Math.floor(Math.random() * 8 + 8);
+    var vineGet = Math.floor(Math.random() * 9 - 4);
     if (vineGet < 0) vineGet = 0;
 
     if(vineGet > storageLeft()) {
@@ -481,7 +493,7 @@ function sleep(){
         idleVillagers += newVillagers;
         if (newVillagers > 0) {
             var newHorses = 0;
-            for(i=1;i<newVillagers;i++) {
+            for(var i=1;i<newVillagers;i++) {
                 if(Math.random() < .07) newHorses += 1;
             }
             newHorses = Math.min(stable * 5 - horsePopulation, newHorses)
@@ -496,19 +508,29 @@ function sleep(){
     gold += taxes;
     sleepMessage += "You collected " + taxes + " gold in taxes.^^";
 
-    //miners and Woodcutters
+    //mining and woodcutting
     var stoneGet = 0;
     var ironGet = 0;
     var woodGet = 0;
     var vineGet = 0;
     for(var i=0;i<miners;i++){
         ironGet += Math.floor(Math.random() * 2);
-        stoneGet += Math.floor(Math.random() * 4 + 4);
+        stoneGet += Math.floor(Math.random() * 8 + 8);
     }
+    for(var i=0;i<mineCarts;i++){
+        ironGet += Math.floor(Math.random() * 2 + 2);
+        stoneGet += Math.floor(Math.random() * 20 + 10);
+    }
+
     for(var i=0;i<woodcutters;i++){
         vineGet += Math.floor(Math.random() * 2);
         woodGet += Math.floor(Math.random() * 4 + 4);
     }
+    for(var i=0;i<woodCarts;i++){
+        vineGet += Math.floor(Math.random() * 2 + 2);
+        woodGet += Math.floor(Math.random() * 20 + 10);
+    }
+
     if(ironGet > storageLeft()) ironGet = storageLeft();
     iron += ironGet;
     if(vineGet > storageLeft()) vineGet = storageLeft();
@@ -1362,7 +1384,7 @@ function processScoutingCount() {
 	if(successChance < 1) {
         var horseChance = 0;
         var foundHorses = 0;
-        for(i=0;i<deployedScouts;i++) horseChance += Math.random();
+        for(var i=0;i<deployedScouts;i++) horseChance += Math.random();
 		scoutMessage += "Your scouts did not find any enemy camps and have returned safely.";
         if(horseChance > 1) {//should be >5 for game
             foundHorses = Math.min(stable * 5 - horsePopulation, Math.ceil(Math.random() * 3));
@@ -1410,7 +1432,7 @@ function listCamps() {
         else if(camp.visibilityLevel == 4) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2))) + "^^";
         else if(camp.visibilityLevel == 5) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold + "^^";
     });
-    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^G: Gather resources from a defeated camp^c: Cancel";
+    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^g: Gather resources from a defeated camp^c: Cancel";
     write(campMessage);
     document.getElementById('inputTextBox').value = "";
     nextFunction = chooseCampAction;
