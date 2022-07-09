@@ -8,7 +8,10 @@
 //scouting - DONE
 //attacking camps - DONE
 //horses & carts
-    //get horses from new peasants and scouting
+    //get horses from new peasants and scouting -DONE
+    //add training for horses and carts
+    //add horses and carts to battles
+    //add carts to resource gathering
 //better help menus
 //first few days tutorial
 //village defense
@@ -140,11 +143,13 @@ var spearmen;
 var swordsmen;
 var archers;
 var scouts;
-var horses;
+var idleHorses;
 var horsemen;
 var idleCarts;
 var mineCarts;
 var woodCarts;
+var farmHorses;
+var horsePopulation;
 
 //buildings
 var blacksmithLevel;
@@ -159,6 +164,7 @@ var stable;
 function updateResources(){
     population = idlePeasants + farmers + miners + woodcutters + spearmen + swordsmen + archers;
     housing = smallHouse * 5 + largeHouse * 10;
+    horsePopulation = idleHorses + horsemen + idleCarts + woodCarts + mineCarts + farmHorses;
     document.getElementById('stone').textContent = stone;
     document.getElementById('wood').textContent = wood;
     document.getElementById('vines').textContent = vines;
@@ -174,8 +180,8 @@ function updateResources(){
     document.getElementById('swordsmen').textContent = swordsmen;
     document.getElementById('archers').textContent = archers;
 	document.getElementById('scouts').textContent = scouts;
-    document.getElementById('horses').textContent = scouts;
-    document.getElementById('horsemen').textContent = scouts;
+    document.getElementById('horses').textContent = idleHorses;
+    document.getElementById('horsemen').textContent = horsemen;
 
     document.getElementById('hoes').textContent = hoes;
     document.getElementById('picks').textContent = picks;
@@ -267,8 +273,12 @@ function init(){
     swordsmen = 1;
     archers = 0;
 	scouts = 0;
-    horses = 0;
+    idleHorses = 0;
     horsemen = 0;
+    idleCarts = 0;
+    woodCarts = 0;
+    mineCarts = 0;
+    farmHorses = 0;
 
     //debug
     spearmen = 100;
@@ -288,13 +298,14 @@ function init(){
     barracksLevel = 1;
     farm = 0;
     smallHouse = 1;
-    largeHouse = 1;
+    largeHouse = 100;
     stable = 0;
     stockpile = 1;
     market = 0;
 
     //debug
     stockpile = 10;
+    stable = 5;
 
     updateResources();
     //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
@@ -456,7 +467,16 @@ function sleep(){
         var newVillagers = Math.floor((housing - population) / 5 + newVillagerModifier);
         if(newVillagers + population > housing) newVillagers = housing - population;
         idlePeasants += newVillagers;
-        if (newVillagers > 0) sleepMessage += pluralize(newVillagers, "new villager") + " came to the village last night.^^";
+        if (newVillagers > 0) {
+            var newHorses = 0;
+            for(i=1;i<newVillagers;i++) {
+                if(Math.random() < .07) newHorses += 1;
+            }
+            newHorses = Math.min(stable * 5 - horsePopulation, newHorses)
+            idleHorses += newHorses;
+            if(newHorses > 0) sleepMessage += pluralize(newVillagers, "new villager") + " came to the village last night. The new villagers also brought " + pluralize(newHorses, "new horse") + ".^^";
+            else sleepMessage += pluralize(newVillagers, "new villager") + " came to the village last night.^^";
+        }
     }
 
     //taxes
@@ -1328,7 +1348,15 @@ function processScoutingCount() {
     var scoutMessage = "";
     var successChance = Math.random() + deployedScouts * .05;
 	if(successChance < 1) {
+        var horseChance = 0;
+        var foundHorses = 0;
+        for(i=0;i<deployedScouts;i++) horseChance += Math.random();
 		scoutMessage += "Your scouts did not find any enemy camps and have returned safely.";
+        if(horseChance > 1) {//should be >5 for game
+            foundHorses = Math.min(stable * 5 - horsePopulation, Math.ceil(Math.random() * 3));
+            idleHorses += foundHorses;
+            scoutMessage += "^^Your scouts found " + pluralize(foundHorses, " horse") + " while scouting and brought them back.";
+        }
 	}
 	else {
         var campLevel = Math.ceil((successChance - 1) * 10);
@@ -1346,7 +1374,6 @@ function processScoutingCount() {
 			Math.ceil(Math.random() * campLevel**1.3 + 25),		                                //wood
 			Math.ceil(Math.random() * campLevel**1.2)   	                                    //food
 		));
-		//need to add scouts losses
 		scoutMessage += "Your scouts identified a level " + identifiedCamps.slice(-1)[0].level + " camp. Input 'l' to view its stats.";
 	}
 
