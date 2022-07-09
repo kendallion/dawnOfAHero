@@ -11,7 +11,7 @@
     //get horses from new villagers and scouting -DONE
     //add training for horses and carts - DONE
     //add horses and carts to battles - DONE
-    //add carts to resource gathering
+    //add carts to resource gathering - DONE
 //better help menus
 //first few days tutorial
 //village defense
@@ -89,7 +89,7 @@ var campAction = null;
 var selectedCampIndex = null;
 
 //debug
-identifiedCamps.push(new EnemyCamp(
+/*identifiedCamps.push(new EnemyCamp(
     1,	                                    //id
     4,				                        //level
     2, 		                                //visibilityLevel
@@ -102,9 +102,9 @@ identifiedCamps.push(new EnemyCamp(
     14,		                                //stone
     12,		                                //wood
     3   	                                //food
-));
+));*/
 
-const soldierTypes = ["spearmen", "swordsmen", "archers", "horsemen", "war carts"];
+const soldierTypes = ["spearmen", "swordsmen", "archers", "horsemen", "warCarts"];
 var soldierTypeIndex = 0;
 var friendlyArmy = {
     spearmen: null,
@@ -266,6 +266,25 @@ function write(text) {
     },speed)
 }
 
+function isWholeNumber(number){
+    if(isNaN(number)){
+        write("Please input a number.");
+        document.getElementById('inputTextBox').value = "";
+        return false;
+    }
+    if(number < 0){
+        write("Please input a number above zero.");
+        document.getElementById('inputTextBox').value = "";
+        return false;
+    }
+    if(number % 1 != 0){
+        write("Please input a whole number.");
+        document.getElementById('inputTextBox').value = "";
+        return false;
+    }
+    return true;
+}
+
 function init(){
     nextFunction = null;
     time = 0;
@@ -279,7 +298,7 @@ function init(){
     food = 5;
 
     //debug
-    food = 50;
+    //food = 50;
 
     idleVillagers = 4;
     farmers = 1;
@@ -297,14 +316,14 @@ function init(){
     warCarts = 0;
 
     //debug
-    spearmen = 10;
+    /*spearmen = 10;
     swordsmen = 10;
     archers = 10;
     scouts = 10;
     farmCarts = 2;
     mineCarts = 2;
     woodCarts = 2;
-    warCarts = 2;
+    warCarts = 2;*/
 
     hoes = 2;
     picks = 1;
@@ -324,12 +343,12 @@ function init(){
     market = 0;
 
     //debug
-    stockpile = 2;
+    /*stockpile = 2;
     stable = 4;
-    largeHouse = 3;
+    largeHouse = 3;*/
 
     updateResources();
-    //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^You can build new buildings, hire workers, train soldiers, and gather materials.");
+    write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^^You can build new buildings, hire workers, train soldiers, and gather materials. At any time you can type 'h' to display the help menu.");
 }
 
 function processInput(){
@@ -918,14 +937,10 @@ function processForgingCount(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var count = parseInt(document.getElementById('inputTextBox').value);
     var canForge = true;
     var forgeError = "";
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
 
     if(blacksmithLevel < forgeItem.blacksmithLevel){
         write("You must upgrade your blacksmith to forge " + forgeItem.variable + ".^Current level: " + blacksmithLevel + "^Required level: " + forgeItem.blacksmithLevel + "^^What would you like to do next?");
@@ -935,10 +950,8 @@ function processForgingCount(){
     }
 
     if(time + forgeItem.forgeTime * count > 64){
-        write("You don't have enough time to forge " + pluralize(count, forgeItem.name) + ".^^What would you like to do next?");
-        nextFunction = null;
-        document.getElementById('inputTextBox').value = "";
-        return;
+        forgeError += "You don't have enough time to forge " + pluralize(count, forgeItem.name) + ".^^";
+        canForge = false;
     }
 
     if(stone < forgeItem.stoneCost * count){
@@ -1099,14 +1112,10 @@ function processTrainingCount(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var count = parseInt(document.getElementById('inputTextBox').value);
     var canTrain = true;
     var trainError = "";
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
 
     if(barracksLevel < trainItem.barracksLevel){
         write("You must upgrade your barracks to train " + trainItem.variable + ".^Current level: " + barracksLevel + "^Required level: " + trainItem.barracksLevel + "^^What would you like to do next?");
@@ -1116,10 +1125,8 @@ function processTrainingCount(){
     }
 
     if(time + trainItem.trainTime * count > 64){
-        write("You don't have enough time to train " + pluralize(count, trainItem.name) + ".^^What would you like to do next?");
-        nextFunction = null;
-        document.getElementById('inputTextBox').value = "";
-        return;
+        trainError += "You don't have enough time to train " + pluralize(count, trainItem.name) + ".^^";
+        canTrain = false;
     }
 
     if(gold < trainItem.goldCost * count){
@@ -1197,12 +1204,8 @@ function processDiscardingCount(){
         return;
     }
 
-    var count = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
 
     if(count > window[discardItem]){
         write("You cannot discard that quantity of " + discardItem + ", since you only have " + window[discardItem] + ".^^What quantity of " + discardItem + " would you like to discard?");
@@ -1288,12 +1291,8 @@ function marketCount(){
         return;
     }
 
-    var count = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
 
     var goldCount = count;
     if(marketItem == "wood" || marketItem == "stone") count *= 50;
@@ -1356,12 +1355,8 @@ function processScoutingCount() {
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var deployedScouts = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(deployedScouts)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var deployedScouts = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(deployedScouts)) return;
 	if(deployedScouts > scouts) {
 		write("You do not have that many scouts.^^How many scouts would you like to send?");
 		document.getElementById('inputTextBox').value = "";
@@ -1432,7 +1427,7 @@ function listCamps() {
         else if(camp.visibilityLevel == 4) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: About " + Math.round(camp.orcs + (Math.random() * 8 - 4)) + "^Ogres: About " + Math.max(0,Math.round(camp.ogres + (Math.random() * 6 - 3))) + "^Slingers: " + Math.max(0,Math.round(camp.slingers + (Math.random() * 4 - 2))) + "^Wood: " + Math.max(0,Math.round(camp.wood + (Math.random() * 10 - 5))) + "^Stone: " + Math.max(0,Math.round(camp.stone + (Math.random() * 10 - 5))) + "^Iron: " + Math.max(0,Math.round(camp.iron + (Math.random() * 4 - 2))) + "^Vines: " + Math.max(0,Math.round(camp.vines + (Math.random() * 4 - 2))) + "^Food: " + Math.max(0,Math.round(camp.food + (Math.random() * 4 - 2))) + "^Gold: " + Math.max(0,Math.round(camp.gold + (Math.random() * 4 - 2))) + "^^";
         else if(camp.visibilityLevel == 5) campMessage += "Id: " + camp.id + "^Level: " + camp.level + "^Orcs: " + camp.orcs + "^Ogres: " + camp.ogres + "^Slingers: " + camp.slingers + "^Wood: " + camp.wood + "^Stone: " + camp.stone + "^Iron: " + camp.iron + "^Vines: " + camp.vines + "^Food: " + camp.food + "^Gold: " + camp.gold + "^^";
     });
-    campMessage += "What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^g: Gather resources from a defeated camp^c: Cancel";
+    campMessage += "What would you like to do next?^a: Attack a camp^g: Gather resources from a defeated camp^r: Remove a camp from your list^c: Cancel";
     write(campMessage);
     document.getElementById('inputTextBox').value = "";
     nextFunction = chooseCampAction;
@@ -1471,12 +1466,8 @@ function selectCampAttack(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var id = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(id)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var id = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(id)) return;
     selectedCampIndex = identifiedCamps.findIndex(camp => camp.id == id);
     if(selectedCampIndex == -1){
         write("You have not identified a camp with that Id. Please try again.");
@@ -1503,12 +1494,8 @@ function selectCampGather(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var id = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(id)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var id = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(id)) return;
     selectedCampIndex = identifiedCamps.findIndex(camp => camp.id == id);
     if(selectedCampIndex == -1){
         write("You have not identified a camp with that Id. Please try again.");
@@ -1533,14 +1520,12 @@ function sendArmyToCamp(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var count = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
+
     if(count > window[soldierTypes[soldierTypeIndex]]){
-        write("You do not have that many " + soldierTypes[soldierTypeIndex] + ".");
+        if(soldierTypes[soldierTypeIndex] == "warCarts") write("You do not have that many war carts.");
+        else write("You do not have that many " + soldierTypes[soldierTypeIndex] + ".");
         document.getElementById('inputTextBox').value = "";
         return;
     }
@@ -1550,30 +1535,35 @@ function sendArmyToCamp(){
 
     if(soldierTypeIndex < soldierTypes.length - 1) {
         soldierTypeIndex ++;
-        write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
+        if(soldierTypes[soldierTypeIndex] == "warCarts") write("How many war carts would you like to send?");
+        else write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
         return;
     }
     else {
-        if(campAction == "attack") write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, friendlyArmy.horsemen, friendlyArmy.warCarts, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
-        else write(gatherCampResources(friendlyArmy.spearmen + friendlyArmy.swordsmen + friendlyArmy.archers + friendlyArmy.horsemen + friendlyArmy.warCarts * 20))
+        if(friendlyArmy.spearmen + friendlyArmy.swordsmen + friendlyArmy.archers + friendlyArmy.horsemen + friendlyArmy.warCarts < 1) {
+            soldierTypeIndex = 0;
+            write("You must send at least one solider to the camp.^^How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
+        }
+        else {
+            if(campAction == "attack") write("Your army marches to the camp... ^^" + fight(true, friendlyArmy.spearmen, friendlyArmy.swordsmen, friendlyArmy.archers, friendlyArmy.horsemen, friendlyArmy.warCarts, identifiedCamps[selectedCampIndex].orcs, identifiedCamps[selectedCampIndex].ogres, identifiedCamps[selectedCampIndex].slingers));
+            else write(gatherCampResources(friendlyArmy.spearmen + friendlyArmy.swordsmen + friendlyArmy.archers + friendlyArmy.horsemen + friendlyArmy.warCarts * 20))
+            nextFunction = null;
+            soldierTypeIndex = 0;
+            friendlyArmy = {
+                spearmen: null,
+                swordsmen: null,
+                arhcers: null,
+                horsemen: null,
+                warCarts: null
+            };
+        }
     }
-
-    nextFunction = null;
-    soldierTypeIndex = 0;
-    friendlyArmy = {
-        spearmen: null,
-        swordsmen: null,
-        arhcers: null,
-        horsemen: null,
-        warCarts: null
-    };
 }
 
 function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArchers, deployedHorsemen, deployedWarCarts, deployedOrcs, deployedOgres, deployedSlingers){
     var fightMessage = "";
     var enemyPower = deployedOrcs + deployedOgres * 2 + deployedSlingers / 2;
     var friendlyPower = deployedSpearmen + deployedSwordsmen * 2 + deployedArchers / 2 + deployedHorsemen * 4;
-    console.log("Friendly Power: " + friendlyPower + "\nEnemy Power: " + enemyPower);
     var lostSpearmen = 0;
     var lostSwordsmen = 0;
     var lostArchers = 0;
@@ -1585,12 +1575,22 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
 
     //calculate ranged attacks
     if(playerOffense) {
-        friendlyPower -= Math.ceil(deployedSlingers * (Math.random() * .10 + .25));
-        enemyPower -= Math.ceil(deployedArchers * (Math.random() * .05 + .25));
+        var enemyRangedForce = Math.ceil(deployedSlingers * (Math.random() * .10 + .25));
+        deployedArchers *= 1-(enemyRangedForce / friendlyPower);
+        friendlyPower -= enemyRangedForce;
+
+        var friendlyRangedForce = Math.ceil(deployedArchers * (Math.random() * .05 + .25));
+        deployedSlingers *= 1-(friendlyRangedForce / enemyPower);
+        enemyPower -= friendlyRangedForce;
     }
     else {
-        enemyPower -= Math.ceil(deployedArchers * (Math.random() * .15 + .25));
-        friendlyPower -= Math.ceil(deployedSlingers * (Math.random() * .05 + .15));
+        var friendlyRangedForce = Math.ceil(deployedArchers * (Math.random() * .05 + .25));
+        deployedSlingers *= 1-(friendlyRangedForce / enemyPower);
+        enemyPower -= friendlyRangedForce;
+
+        var enemyRangedForce = Math.ceil(deployedSlingers * (Math.random() * .10 + .25));
+        deployedArchers *= 1-(enemyRangedForce / friendlyPower);
+        friendlyPower -= enemyRangedForce;
     }
 
     //if the enemy wins
@@ -1629,7 +1629,6 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
     //else if the player wins
     else {
         enemyPower -= ((friendlyPower - enemyPower) / 10);
-        console.log("Friendly Power: " + friendlyPower + "\nEnemy Power: " + enemyPower);
         for(var i=1;i<enemyPower;i++){
             if(i % 3 == 0){
                 if(deployedSwordsmen - lostSwordsmen > 0) lostSwordsmen++;
@@ -1732,12 +1731,9 @@ function selectCampRemoval(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var id = parseInt(document.getElementById('inputTextBox').value);
-    if(isNaN(id)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var id = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(id)) return;
+
     var index = identifiedCamps.findIndex(camp => camp.id == id);
     if(index == -1){
         write("You have not identified a camp with that Id. Please try again.");
@@ -1792,7 +1788,7 @@ function gatherCampResources(carryCapacity){
     stone += stoneStolen;
     food += foodStolen;
 
-    gatherMessage += "Your army gathered these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen + "^Stone: " + stoneStolen + "^Wood: " + woodStolen + "^^";
+    gatherMessage += "Your army gathered these resources:^^Gold: " + goldStolen + "^Food: " + foodStolen + "^Iron: " + ironStolen + "^Vines: " + vinesStolen +  "^Wood: " + woodStolen + "^Stone: " + stoneStolen + "^^";
     if(camp.gold + camp.iron + camp.vines + camp.wood + camp.stone + camp.food > 0) {
         gatherMessage += "Your army was not able to carry away all of the camp's resources. The camp is still in your list and you can go back to gather the resources at any time.^^";
         camp.visibilityLevel = 5;
@@ -1887,14 +1883,10 @@ function processHorseTrainingCount(){
         document.getElementById('inputTextBox').value = "";
         return;
     }
-    var count = parseInt(document.getElementById('inputTextBox').value);
     var canTrain = true;
     var trainError = "";
-    if(isNaN(count)){
-        write("Please input a number.");
-        document.getElementById('inputTextBox').value = "";
-        return;
-    }
+    var count = parseFloat(document.getElementById('inputTextBox').value);
+    if(!isWholeNumber(count)) return;
 
     if(window[horseTrainItem.requiredVillagerVariable] < count){
         trainError += "Not enough " + horseTrainItem.requiredVillagerVariable + " to train that many horses.^Required: " + count + "^Curent: " + window[horseTrainItem.requiredVillagerVariable] + "^^";
