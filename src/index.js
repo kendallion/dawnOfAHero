@@ -7,13 +7,19 @@
 //farm upgrades - DONE
 //scouting - DONE
 //attacking camps - DONE
-//horses & carts
+//horses & carts - DONE
     //get horses from new villagers and scouting -DONE
     //add training for horses and carts - DONE
     //add horses and carts to battles - DONE
     //add carts to resource gathering - DONE
 //better help menus
 //first few days tutorial
+    //Day 1: train villagers with leftover tools and gather resources
+    //Day 2: build houses so more villagers will come
+    //Day 3: build a blacksmith and forge spears and tools
+    // upgrade stockpile at some point
+    //Day 4: maybe - upgrade barracks and work on defense
+    //Day 5: attacks are likely to come any day now
 //village defense
 //cookie saves
 //Change sky color based on time
@@ -171,7 +177,7 @@ var market;
 var stable;
 
 function updateResources(){
-    population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers + horsemen + mineCarts + farmCarts; //warCarts do not have population
+    population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers + scouts + horsemen + mineCarts + farmCarts; //warCarts do not have population
     housing = smallHouse * 5 + largeHouse * 10;
     horsePopulation = idleHorses + horsemen + woodCarts * 2 + mineCarts * 2 + farmCarts * 2 + warCarts * 2;
     document.getElementById('stone').textContent = stone;
@@ -264,6 +270,7 @@ function write(text) {
             isWriting = false;
         }
     },speed)
+    document.getElementById("content").innerText = document.getElementById('content').innerText.slice(-4000, document.getElementById("content").innerText.length);
 }
 
 function isWholeNumber(number){
@@ -308,7 +315,7 @@ function init(){
     swordsmen = 1;
     archers = 0;
 	scouts = 0;
-    idleHorses = 0;
+    idleHorses = 1;
     horsemen = 0;
     mineCarts = 0;
     woodCarts = 0;
@@ -338,7 +345,7 @@ function init(){
     farm = 0;
     smallHouse = 1;
     largeHouse = 1;
-    stable = 0;
+    stable = 1;
     stockpile = 1;
     market = 0;
 
@@ -348,7 +355,7 @@ function init(){
     largeHouse = 3;*/
 
     updateResources();
-    write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^^You can build new buildings, hire workers, train soldiers, and gather materials. At any time you can type 'h' to display the help menu.");
+    //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^^You can build new buildings, hire workers, train soldiers, and gather materials. At any time you can type 'h' to display the help menu.");
 }
 
 function processInput(){
@@ -506,7 +513,7 @@ function sleep(){
 
     //population
     if(population < housing){
-        var newVillagerModifier = Math.round(Math.random() * 2.5);
+        var newVillagerModifier = Math.round(Math.random() * 2 + 2);
         var newVillagers = Math.floor((housing - population) / 5 + newVillagerModifier);
         if(newVillagers + population > housing) newVillagers = housing - population;
         idleVillagers += newVillagers;
@@ -533,20 +540,20 @@ function sleep(){
     var woodGet = 0;
     var vineGet = 0;
     for(var i=0;i<miners;i++){
-        ironGet += Math.floor(Math.random() * 2);
+        ironGet += Math.floor(Math.random() * 2.5 + 1);
         stoneGet += Math.floor(Math.random() * 8 + 8);
     }
     for(var i=0;i<mineCarts;i++){
-        ironGet += Math.floor(Math.random() * 2 + 2);
+        ironGet += Math.floor(Math.random() * 3 + 2);
         stoneGet += Math.floor(Math.random() * 20 + 10);
     }
 
     for(var i=0;i<woodcutters;i++){
-        vineGet += Math.floor(Math.random() * 2);
-        woodGet += Math.floor(Math.random() * 4 + 4);
+        vineGet += Math.floor(Math.random() * 2.5 + 1);
+        woodGet += Math.floor(Math.random() * 8 + 8);
     }
     for(var i=0;i<woodCarts;i++){
-        vineGet += Math.floor(Math.random() * 2 + 2);
+        vineGet += Math.floor(Math.random() * 3 + 2);
         woodGet += Math.floor(Math.random() * 20 + 10);
     }
 
@@ -784,7 +791,7 @@ function processUpgrading(){
 
     if(upgradeItem.woodCost > wood) upgradeMessage += "Not enough wood.^Required: " + upgradeItem.woodCost + "^Current: " + wood + "^^";
     if(upgradeItem.stoneCost > stone) upgradeMessage += "Not enough stone.^Required: " + upgradeItem.stoneCost + "^Current: " + stone + "^^";
-    if(upgradeItem.ironCost > wood) upgradeMessage += "Not enough iron.^Required: " + upgradeItem.ironCost + "^Current: " + iron + "^^";
+    if(upgradeItem.ironCost > iron) upgradeMessage += "Not enough iron.^Required: " + upgradeItem.ironCost + "^Current: " + iron + "^^";
     if(upgradeItem.upgradeTime + time > 64) upgradeMessage += "You don't have enough time to upgrade your " + upgradeItem.name + ".^^";
 
     if(!upgradeMessage) {
@@ -1017,7 +1024,7 @@ function processTraining(){
                 variable: "farmers",
                 neededItemVariable: "hoes",
                 goldCost: 1,
-                trainTime: 1,
+                trainTime: 2,
                 barracksLevel: 0
             };
             nextFunction = processTrainingCount;
@@ -1029,7 +1036,7 @@ function processTraining(){
                 variable: "miners",
                 neededItemVariable: "picks",
                 goldCost: 1,
-                trainTime: 1,
+                trainTime: 2,
                 barracksLevel: 0
             };
             nextFunction = processTrainingCount;
@@ -1041,7 +1048,7 @@ function processTraining(){
                 variable: "woodcutters",
                 neededItemVariable: "axes",
                 goldCost: 1,
-                trainTime: 1,
+                trainTime: 2,
                 barracksLevel: 0
             };
             nextFunction = processTrainingCount;
@@ -1053,7 +1060,7 @@ function processTraining(){
                 variable: "spearmen",
                 neededItemVariable: "spears",
                 goldCost: 1,
-                trainTime: 1,
+                trainTime: 2,
                 barracksLevel: 1
             };
             nextFunction = processTrainingCount;
@@ -1065,7 +1072,7 @@ function processTraining(){
                 variable: "swordsmen",
                 neededItemVariable: "swords",
                 goldCost: 1,
-                trainTime: 2,
+                trainTime: 3,
                 barracksLevel: 2
             };
             nextFunction = processTrainingCount;
@@ -1077,7 +1084,7 @@ function processTraining(){
                 variable: "archers",
                 neededItemVariable: "bows",
                 goldCost: 2,
-                trainTime: 2,
+                trainTime: 3,
                 barracksLevel: 2
             };
             nextFunction = processTrainingCount;
@@ -1089,7 +1096,7 @@ function processTraining(){
                 variable: "scouts",
                 neededItemVariable: "daggers",
                 goldCost: 2,
-                trainTime: 2,
+                trainTime: 3,
                 barracksLevel: 3
             };
             nextFunction = processTrainingCount;
@@ -1278,6 +1285,7 @@ function marketItemChoice(){
             document.getElementById('inputTextBox').value = "";
             return;
     }
+    //TODO: make this only show what you're currently selling
     write("How many stacks of " + marketItem + " would you like to " + marketChoice + "?^^Wood and stone: stacks of 50 for 1 gold^^Iron and vines: stacks of 5 for 1 gold.");
     nextFunction = marketCount;
     document.getElementById('inputTextBox').value = "";
@@ -1618,7 +1626,7 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             camp.ogres -= lostOgres;
             camp.slingers -= lostSlingers;
         }
-        enemyPower = max(1, enemyPower - lostOrcs - lostOgres * 2 - lostSlingers / 2);
+        enemyPower = Math.max(1, enemyPower - lostOrcs - lostOgres * 2 - lostSlingers / 2);
 
         spearmen -= deployedSpearmen;
         swordsmen -= deployedSwordsmen;
