@@ -1,17 +1,6 @@
-//bacon
+//bacon - for Noah
 
 //TODO:
-//Market buy & sell - DONE
-//night attacks - DONE
-//add lose conditions - DONE
-//farm upgrades - DONE
-//scouting - DONE
-//attacking camps - DONE
-//horses & carts - DONE
-    //get horses from new villagers and scouting -DONE
-    //add training for horses and carts - DONE
-    //add horses and carts to battles - DONE
-    //add carts to resource gathering - DONE
 //better help menus
 //first few days tutorial
     //Day 1: train villagers with leftover tools and gather resources
@@ -26,6 +15,9 @@
 //better resource UI
 //representative graphics
 //unit upgrades
+//don't show menu options if that option was recently selected
+    //keep a register of the last n functions, and if next function matches one of them, don't show
+    //pop off the last item in the register when a new function is added
 
 var isWriting = false;
 var nextFunction = null;
@@ -509,7 +501,7 @@ function sleep(){
         food += foodGet;
         sleepMessage += "You ran out of space in your stockpile, and you were only able to store " + foodGet + " food. Consider discarding or selling unnecessary resources.^^";
     }
-    else food += farmers;
+    else food += foodGet;
 
     //population
     if(population < housing){
