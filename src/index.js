@@ -1330,7 +1330,7 @@ function processNightAttack(attackMessage){
     //attackChance = 1; //DEBUG
     if(attackChance > day) return attackMessage;
     else{
-        attackMessage += fight(false, spearmen, swordsmen, archers, horsemen, 0, Math.ceil((Math.random() * (day / 2)**1.5) + 2), Math.max(0,Math.ceil((Math.random() * (day / 2)**1.5) - 4)), 0);
+        attackMessage += fight(false, spearmen, swordsmen, archers, horsemen, 0, Math.ceil((Math.random() * (day / 2)**1.3) + 3), Math.max(0,Math.ceil((Math.random() * (day / 2)**1.3) - 3)), 0);
     }
     return attackMessage;
 }
@@ -1575,6 +1575,7 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
 
     //calculate ranged attacks
     if(playerOffense) {
+
         var enemyRangedForce = Math.ceil(deployedSlingers * (Math.random() * .10 + .25));
         deployedArchers *= 1-(enemyRangedForce / friendlyPower);
         friendlyPower -= enemyRangedForce;
@@ -1589,7 +1590,7 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
         enemyPower -= friendlyRangedForce;
 
         var enemyRangedForce = Math.ceil(deployedSlingers * (Math.random() * .10 + .25));
-        deployedArchers *= 1-(enemyRangedForce / friendlyPower);
+        if(deployedArchers > 0) deployedArchers *= 1-(enemyRangedForce / friendlyPower);
         friendlyPower -= enemyRangedForce;
     }
 
@@ -1619,7 +1620,6 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             camp.slingers -= lostSlingers;
         }
         enemyPower = Math.max(1, enemyPower - lostOrcs - lostOgres * 2 - lostSlingers / 2);
-
         spearmen -= deployedSpearmen;
         swordsmen -= deployedSwordsmen;
         archers -= deployedArchers;
@@ -1702,12 +1702,12 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
             fightMessage += "You were attacked by a band of " + deployedOrcs + " orcs and " + pluralize(deployedOgres, "ogre") + ".^^Your army successfully defended against the attack and you lost no troops.^^";
         }
         else{
-            var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 3));
+            var goldStolen = Math.min(gold,Math.round(enemyPower / 10 * 2));
             var ironStolen = Math.min(iron,Math.round(enemyPower / 10 * 2));
-            var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 2));
+            var vinesStolen = Math.min(vines,Math.round(enemyPower / 10 * 1));
             var woodStolen = Math.min(wood,Math.round(enemyPower / 10 * 1));
             var stoneStolen = Math.min(stone,Math.round(enemyPower / 10 * 1));
-            var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 1));
+            var foodStolen = Math.min(food,Math.round(enemyPower / 10 * 3));
 
             gold -= goldStolen;
             iron -= ironStolen;
