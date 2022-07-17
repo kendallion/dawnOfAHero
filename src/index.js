@@ -15,12 +15,22 @@
 //better resource UI
 //representative graphics
 //unit upgrades
-//don't show menu options if that option was recently selected
-    //keep a register of the last n functions, and if next function matches one of them, don't show
-    //pop off the last item in the register when a new function is added
+//don't show menu options if that option was recently selected - DONE
 
 var isWriting = false;
 var nextFunction = null;
+var recentActions = [];
+
+function setNextFunction(functionName) {
+    nextFunction = functionName;
+    recentActions.unshift(functionName);
+    if(recentActions.length > 2) recentActions.pop();
+}
+
+function writeWithHelpMenu(question, menu, functionName) {
+    if(!recentActions.includes(functionName)) write(question + menu);
+    else write(question);
+}
 
 var buildItem = {
     name: null,
@@ -372,7 +382,11 @@ function processInput(){
             train();
             break;
         case 's':
-            sleep();
+            if(time <= 56){
+                write("Are you sure you want to sleep this early? (y/n)");
+                setNextFunction(confirmSleep);
+            }
+            else sleep();
             break;
         case 'b':
             build();
@@ -468,6 +482,19 @@ function goWoodCutting(){
     wood += woodGet;
     time += 8;
     updateResources();
+}
+
+function confirmSleep(){
+    switch(document.getElementById('inputTextBox').value) {
+        case 'y':
+            sleep();
+            break;
+        default:
+            write("Cancelled sleep.^^What would you like to do next?");
+            break;
+    }
+    document.getElementById('inputTextBox').value = "";
+    nextFunction = null;
 }
 
 function sleep(){
@@ -574,8 +601,8 @@ function build(){
         write("It's too late to build anything right now.");
         return;
     }
-    write("What would you like to build?^b: Blacksmith^a: Barracks^s: Small House^l: Large House^m: Market^t: Stable^h: Help^c: Cancel");
-    nextFunction = processBuilding;
+    writeWithHelpMenu("What would you like to build?", "^b: Blacksmith^a: Barracks^s: Small House^l: Large House^m: Market^t: Stable^h: Help^c: Cancel", processBuilding);
+    setNextFunction(processBuilding);
 }
 
 function processBuilding(){
@@ -692,8 +719,8 @@ function processBuilding(){
 }
 
 function upgrade(){
-    write("What would you like to upgrade?^b: Blacksmith^a: Barracks^s: Stockpile^f: Farm^h: Help^c: Cancel");
-    nextFunction = processUpgrading;
+    writeWithHelpMenu("What would you like to upgrade?", "^b: Blacksmith^a: Barracks^s: Stockpile^f: Farm^h: Help^c: Cancel", processUpgrading);
+    setNextFunction(processUpgrading);
 }
 
 function processUpgrading(){
@@ -811,8 +838,8 @@ function forge(){
         write("You must build a blacksmith before you can forge weapons and tools.^^What would you like to do next?");
         return;
     }
-    write("What would you like to forge?^o: Hoe^p: Pick^a: Axe^s: Spear^w: Sword^b: Bow^d: Dagger^h: Help^c: Cancel");
-    nextFunction = processForging;
+    writeWithHelpMenu("What would you like to forge?", "^o: Hoe^p: Pick^a: Axe^s: Spear^w: Sword^b: Bow^d: Dagger^h: Help^c: Cancel", processForging);
+    setNextFunction(processForging);
 }
 
 function processForging(){
@@ -832,7 +859,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 1
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 'p':
             write("How many picks would you like to forge?");
@@ -846,7 +873,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 1
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 'a':
             write("How many axes would you like to forge?");
@@ -860,7 +887,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 1
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 's':
             write("How many spears would you like to forge?");
@@ -874,7 +901,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 1
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 'w':
             write("How many swords would you like to forge?");
@@ -888,7 +915,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 2
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 'b':
             write("How many bows would you like to make?");
@@ -902,7 +929,7 @@ function processForging(){
                 forgeTime: 1,
                 blacksmithLevel: 2
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
 		case 'd':
             write("How many daggers would you like to forge?");
@@ -916,7 +943,7 @@ function processForging(){
                 forgeTime: 2,
                 blacksmithLevel: 3
             };
-            nextFunction = processForgingCount;
+            setNextFunction(processForgingCount);
             break;
         case 'c':
             write("Cancelled forging.^^What would you like to do next?");
@@ -1000,8 +1027,8 @@ function train(){
         write("You do not have any idle villagers that can be trained.^^What would you like to do next?");
         return;
     }
-    write("What would you like to train?^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^u: Scout^h: Help^c: Cancel");
-    nextFunction = processTraining;
+    writeWithHelpMenu("What would you like to train?", "^f: Farmer^m: Miner^w: Woodcutter^s: Spearman^o: Swordsman^a: Archer^u: Scout^h: Help^c: Cancel", processTraining);
+    setNextFunction(processTraining);
 }
 
 function processTraining(){
@@ -1019,7 +1046,7 @@ function processTraining(){
                 trainTime: 2,
                 barracksLevel: 0
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 'm':
             write("How many miners would you like to train?");
@@ -1031,7 +1058,7 @@ function processTraining(){
                 trainTime: 2,
                 barracksLevel: 0
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 'w':
             write("How many woodcutters would you like to train?");
@@ -1043,7 +1070,7 @@ function processTraining(){
                 trainTime: 2,
                 barracksLevel: 0
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 's':
             write("How many spearmen would you like to train?");
@@ -1055,7 +1082,7 @@ function processTraining(){
                 trainTime: 2,
                 barracksLevel: 1
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 'o':
             write("How many swordsmen would you like to train?");
@@ -1067,7 +1094,7 @@ function processTraining(){
                 trainTime: 3,
                 barracksLevel: 2
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 'a':
             write("How many archers would you like to train?");
@@ -1079,7 +1106,7 @@ function processTraining(){
                 trainTime: 3,
                 barracksLevel: 2
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
 		case 'u':
             write("How many scouts would you like to train?");
@@ -1091,7 +1118,7 @@ function processTraining(){
                 trainTime: 3,
                 barracksLevel: 3
             };
-            nextFunction = processTrainingCount;
+            setNextFunction(processTrainingCount);
             break;
         case 'c':
             write("Cancelled training.^^What would you like to do next?");
@@ -1161,8 +1188,8 @@ function processTrainingCount(){
 }
 
 function discard(){
-    write("What would you like to discard?^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel");
-    nextFunction = processDiscarding;
+    writeWithHelpMenu("What would you like to discard?", "^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel", processDiscarding);
+    setNextFunction(processDiscarding);
     return;
 }
 
@@ -1191,7 +1218,7 @@ function processDiscarding(){
             return;
     }
     write("What quantity of " + discardItem + " would you like to discard?");
-    nextFunction = processDiscardingCount;
+    setNextFunction(processDiscardingCount);
     document.getElementById('inputTextBox').value = "";
 }
 
@@ -1224,8 +1251,8 @@ function goToMarket(){
         write("You must first build a market before you can buy or sell resources.^^What would you like to do next?");
         return;
     }
-    write("What would you like to do at the market?^b: Buy resources^s: Sell Resources^c: Cancel");
-    nextFunction = marketBuyOrSell;
+    writeWithHelpMenu("What would you like to do at the market?", "^b: Buy resources^s: Sell Resources^c: Cancel", marketBuyOrSell);
+    setNextFunction(marketBuyOrSell);
     return;
 }
 
@@ -1233,7 +1260,7 @@ function marketBuyOrSell(){
     switch(document.getElementById('inputTextBox').value) {
         case 'b':
             marketChoice = "buy";
-            write("What would you like to buy?^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel");
+            writeWithHelpMenu("What would you like to buy?", "^s: Stone^w: Wood^i: Iron^v: Vines^c: Cancel", marketItemChoice);
             break;
         case 's':
             marketChoice = "sell";
@@ -1249,7 +1276,7 @@ function marketBuyOrSell(){
             document.getElementById('inputTextBox').value = "";
             return;
     }
-    nextFunction = marketItemChoice;
+    setNextFunction(marketItemChoice);
     document.getElementById('inputTextBox').value = "";
 }
 
@@ -1277,16 +1304,17 @@ function marketItemChoice(){
             document.getElementById('inputTextBox').value = "";
             return;
     }
-    //TODO: make this only show what you're currently selling
-    write("How many stacks of " + marketItem + " would you like to " + marketChoice + "?^^Wood and stone: stacks of 50 for 1 gold^^Iron and vines: stacks of 5 for 1 gold.");
-    nextFunction = marketCount;
+    if(marketItem == "stone" || marketItem == "wood") write("How many stacks of " + marketItem + " would you like to " + marketChoice + "?^^Each stack is 50 " + marketItem + " for 1 gold.");
+    else write("How many stacks of " + marketItem + " would you like to " + marketChoice + "?^^Each stack is 5 " + marketItem + " for 1 gold.");
+
+    setNextFunction(marketCount);
     document.getElementById('inputTextBox').value = "";
 }
 
 function marketCount(){
     if(document.getElementById('inputTextBox').value == 'c'){
         write("Cancelled market action.^^What would you like to do next?")
-        nextFunction = null;;
+        nextFunction = null;
         document.getElementById('inputTextBox').value = "";
         return;
     }
@@ -1345,7 +1373,7 @@ function goScouting() {
         return;
     }
     write("How many scouts would you like to send?");
-    nextFunction = processScoutingCount;
+    setNextFunction(processScoutingCount);
 }
 
 function processScoutingCount() {
@@ -1430,22 +1458,22 @@ function listCamps() {
     campMessage += "What would you like to do next?^a: Attack a camp^g: Gather resources from a defeated camp^r: Remove a camp from your list^c: Cancel";
     write(campMessage);
     document.getElementById('inputTextBox').value = "";
-    nextFunction = chooseCampAction;
+    setNextFunction(chooseCampAction);
 }
 
 function chooseCampAction() {
     switch(document.getElementById('inputTextBox').value) {
         case 'a':
             write("Which camp would you like to attack? Select by Id.");
-            nextFunction = selectCampAttack;
+            setNextFunction(selectCampAttack);
             break;
         case 'r':
             write("Which camp would you like to remove from your list? Select by ID.");
-            nextFunction = selectCampRemoval;
+            setNextFunction(selectCampRemoval);
             break;
         case 'g':
             write("Which camp would you like to gather resources from? Select by ID.");
-            nextFunction = selectCampGather;
+            setNextFunction(selectCampGather);
             break;
         case 'c':
             write("Cancelled camp action.^^What would you like to do next?");
@@ -1477,13 +1505,13 @@ function selectCampAttack(){
         write("You have already defeated this camp, but you can still send your army to gather resources from it.^^How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
         document.getElementById('inputTextBox').value = "";
         campAction = "gather";
-        nextFunction = sendArmyToCamp;
+        setNextFunction(sendArmyToCamp);
     }
     else{
         write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send?");
         document.getElementById('inputTextBox').value = "";
         campAction = "attack";
-        nextFunction = sendArmyToCamp;
+        setNextFunction(sendArmyToCamp);
     }
 }
 
@@ -1509,7 +1537,7 @@ function selectCampGather(){
         write("How many " + soldierTypes[soldierTypeIndex] + " would you like to send to gather resources?");
         document.getElementById('inputTextBox').value = "";
         campAction = "gather";
-        nextFunction = sendArmyToCamp;
+        setNextFunction(sendArmyToCamp);
     }
 }
 
@@ -1743,7 +1771,7 @@ function selectCampRemoval(){
         identifiedCamps.splice(index, 1);
         write("Removed camp of Id " + id + ". ^^What would you like to do next?^a: Attack a camp^r: Remove a camp from your list^c: Cancel");
         document.getElementById('inputTextBox').value = "";
-        nextFunction = chooseCampAction;
+        setNextFunction(chooseCampAction);
     }
 }
 
@@ -1806,8 +1834,8 @@ function trainHorses(){
         return;
     }
 
-    write("What would you like to train?^o: Horseman^m: Mine cart^w: Wood cart^f: Farm cart^a: War cart");
-    nextFunction = processHorseTraining;
+    writeWithHelpMenu("What would you like to train?", "^o: Horseman^m: Mine cart^w: Wood cart^f: Farm cart^a: War cart", processHorseTraining);
+    setNextFunction(processHorseTraining);
 }
 
 function processHorseTraining(){
@@ -1823,7 +1851,7 @@ function processHorseTraining(){
                 requiredVillagerVariable: "spearmen",
                 requiredHorses: 1
             };
-            nextFunction = processHorseTrainingCount;
+            setNextFunction(processHorseTrainingCount);
             break;
         case 'm':
             write("How many mine carts would you like to train?");
@@ -1833,7 +1861,7 @@ function processHorseTraining(){
                 requiredVillagerVariable: "miners",
                 requiredHorses: 2
             };
-            nextFunction = processHorseTrainingCount;
+            setNextFunction(processHorseTrainingCount);
             break;
         case 'w':
             write("How many wood carts would you like to train?");
@@ -1843,7 +1871,7 @@ function processHorseTraining(){
                 requiredVillagerVariable: "miners",
                 requiredHorses: 2
             };
-            nextFunction = processHorseTrainingCount;
+            setNextFunction(processHorseTrainingCount);
             break;
         case 'f':
             write("How many farm carts would you like to train?");
@@ -1853,7 +1881,7 @@ function processHorseTraining(){
                 requiredVillagerVariable: "farmers",
                 requiredHorses: 2
             };
-            nextFunction = processHorseTrainingCount;
+            setNextFunction(processHorseTrainingCount);
             break;
         case 'a':
             write("How many war carts would you like to train?");
@@ -1863,7 +1891,7 @@ function processHorseTraining(){
                 requiredVillagerVariable: null,
                 requiredHorses: 2
             };
-            nextFunction = processHorseTrainingCount;
+            setNextFunction(processHorseTrainingCount);
             break;
         case 'c':
             write("Cancelled horse training.^^What would you like to do next?");
