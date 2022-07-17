@@ -47,6 +47,7 @@ var upgradeItem = {
     woodCost: null,
     stoneCost: null,
     ironCost: null,
+    vineCost: null,
     maxLevel: null,
     upgradeTime: null
 };
@@ -160,6 +161,8 @@ var spearmen;
 var swordsmen;
 var archers;
 var scouts;
+
+//horses
 var idleHorses;
 var horsemen;
 var mineCarts;
@@ -177,6 +180,7 @@ var largeHouse;
 var stockpile;
 var market;
 var stable;
+var defenses;
 
 function updateResources(){
     population = idleVillagers + farmers + miners + woodcutters + spearmen + swordsmen + archers + scouts + horsemen + mineCarts + farmCarts; //warCarts do not have population
@@ -347,9 +351,10 @@ function init(){
     farm = 0;
     smallHouse = 1;
     largeHouse = 1;
-    stable = 1;
     stockpile = 1;
     market = 0;
+    stable = 1;
+    defenses = 0;
 
     //debug
     /*stockpile = 2;
@@ -357,7 +362,7 @@ function init(){
     largeHouse = 3;*/
 
     updateResources();
-    //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many. Please help us. I am giving you control of the village.^^You can build new buildings, hire workers, train soldiers, and gather materials. At any time you can type 'h' to display the help menu.");
+    write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many.^^I recommend you get started by training some of these villagers with the tools that we have on hand. You can spend the rest of the day mining and woodcutting to gather materials.");
 }
 
 function processInput(){
@@ -419,7 +424,7 @@ function processInput(){
 }
 
 function giveHelp(){
-    write("Options:^m: Go mining^w: Go woodcutting^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Buy/sell supplies at the market^g: Scout for enemy camps^l: View enemy camp stats^s: Sleep^d: Discard items^r: Train Horses");
+    write("Options:^m: Go mining^w: Go woodcutting^s: Sleep^b: Build buildings^u: Upgrade buildings^t: Train workers^f: Forge equipment^a: Buy/sell supplies at the market^g: Scout for enemy camps^l: View enemy camp stats^d: Discard items^r: Train Horses");
 }
 
 function goMining(){
@@ -590,10 +595,22 @@ function sleep(){
 
     if(food - ((foodConsumption() - foodProduction()) * 3) <= 0) sleepMessage += "You don't have much food left in your stockpile. Train farmers to ensure adequate food production.^^";
 
+    sleepMessage = tutorialMessages(sleepMessage);
+
     sleepMessage += "It is now day " + day + ". What would you like to do next?";
     write(sleepMessage);
 
     updateResources();
+}
+
+function tutorialMessages(message){
+    message = "";
+    if(day == 2) message += "";
+    if(day == 3) message += "";
+    if(day == 4) message += "";
+    if(day == 5) message += "";
+
+    return message;
 }
 
 function build(){
@@ -601,7 +618,7 @@ function build(){
         write("It's too late to build anything right now.");
         return;
     }
-    writeWithHelpMenu("What would you like to build?", "^b: Blacksmith^a: Barracks^s: Small House^l: Large House^m: Market^t: Stable^h: Help^c: Cancel", processBuilding);
+    writeWithHelpMenu("What would you like to build?", "^b: Blacksmith^s: Small House^l: Large House^m: Market^t: Stable^h: Help^c: Cancel", processBuilding);
     setNextFunction(processBuilding);
 }
 
@@ -719,7 +736,7 @@ function processBuilding(){
 }
 
 function upgrade(){
-    writeWithHelpMenu("What would you like to upgrade?", "^b: Blacksmith^a: Barracks^s: Stockpile^f: Farm^h: Help^c: Cancel", processUpgrading);
+    writeWithHelpMenu("What would you like to upgrade?", "^b: Blacksmith^a: Barracks^s: Stockpile^f: Farm^d: Defenses^h: Help^c: Cancel", processUpgrading);
     setNextFunction(processUpgrading);
 }
 
@@ -735,6 +752,7 @@ function processUpgrading(){
                 woodCost: 75 * (barracksLevel + 1),
                 stoneCost: 50 * (barracksLevel + 1),
                 ironCost: 1 * (barracksLevel + 1),
+                vineCost: 0,
                 maxLevel: null,
                 upgradeTime: 4
             };
@@ -746,6 +764,7 @@ function processUpgrading(){
                 woodCost: 50 * (blacksmithLevel + 1),
                 stoneCost: 75 * (blacksmithLevel + 1),
                 ironCost: 4 * (blacksmithLevel + 1),
+                vineCost: 0,
                 maxLevel: null,
                 upgradeTime: 4
             };
@@ -757,6 +776,7 @@ function processUpgrading(){
                 woodCost: 50,
                 stoneCost: 75,
                 ironCost: 0,
+                vineCost: 0,
                 maxLevel: null,
                 upgradeTime: 4
             };
@@ -768,6 +788,7 @@ function processUpgrading(){
                 woodCost: 100 * (farm + 1),
                 stoneCost: 25 * (farm + 1),
                 ironCost: 1 * (farm + 1),
+                vineCost: 0,
                 maxLevel: null,
                 upgradeTime: 4
             };
@@ -779,6 +800,19 @@ function processUpgrading(){
                 woodCost: 100,
                 stoneCost: 25,
                 ironCost: 5,
+                vineCost: 0,
+                maxLevel: null,
+                upgradeTime: 4
+            };
+            break;
+        case 'd':
+            upgradeItem = {
+                name: "defenses",
+                variable: "defenses",
+                woodCost: 20 + 10 * defenses,
+                stoneCost: 0,
+                ironCost: 0,
+                vineCost: 5 + 2 * defenses,
                 maxLevel: null,
                 upgradeTime: 4
             };
@@ -811,12 +845,14 @@ function processUpgrading(){
     if(upgradeItem.woodCost > wood) upgradeMessage += "Not enough wood.^Required: " + upgradeItem.woodCost + "^Current: " + wood + "^^";
     if(upgradeItem.stoneCost > stone) upgradeMessage += "Not enough stone.^Required: " + upgradeItem.stoneCost + "^Current: " + stone + "^^";
     if(upgradeItem.ironCost > iron) upgradeMessage += "Not enough iron.^Required: " + upgradeItem.ironCost + "^Current: " + iron + "^^";
+    if(upgradeItem.vineCost > vines) upgradeMessage += "Not enough vines.^Required: " + upgradeItem.vineCost + "^Current: " + vines + "^^";
     if(upgradeItem.upgradeTime + time > 64) upgradeMessage += "You don't have enough time to upgrade your " + upgradeItem.name + ".^^";
 
     if(!upgradeMessage) {
         wood -= upgradeItem.woodCost;
         stone -= upgradeItem.stoneCost;
         iron -= upgradeItem.ironCost;
+        vines -= upgradeItem.vineCost;
         time += upgradeItem.upgradeTime;
         window[upgradeItem.variable]++;
         upgradeMessage += "You have upgraded your  " + upgradeItem.name + " to level " + window[upgradeItem.variable] + ".^^";
@@ -1622,6 +1658,8 @@ function fight(playerOffense, deployedSpearmen, deployedSwordsmen, deployedArche
         if(deployedArchers > 0) deployedArchers *= 1-(enemyRangedForce / friendlyPower);
         friendlyPower -= enemyRangedForce;
     }
+
+    if(!playerOffense) enemyPower -= defenses * 4;
 
     //if the enemy wins
     if(enemyPower > friendlyPower){
