@@ -275,7 +275,7 @@ function write(text) {
             clearInterval(timer);
             isWriting = false;
         }
-    },speed)
+    },speed);
     document.getElementById("content").innerText = document.getElementById('content').innerText.slice(-4000, document.getElementById("content").innerText.length);
 }
 
@@ -362,7 +362,7 @@ function init(){
     largeHouse = 3;*/
 
     updateResources();
-    write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many.^^I recommend you get started by training some of these villagers with the tools that we have on hand. You can spend the rest of the day mining and woodcutting to gather materials.");
+    //write("It's a war torn land. Villages are being raided every day by the elusive Woodland Prowlers. Every day, more and more of them arrive. Every day, more and more villagers die. They need a leader. A hero. This hero... is You!^^Welcome to our village. My name is Andor. We have been raided by the Woodland Prowlers. We have a small militia left and some resources, but not many.^^I recommend you get started by training some of these villagers with the tools that we have on hand. You can spend the rest of the day mining and woodcutting to gather materials.");
 }
 
 function processInput(){
