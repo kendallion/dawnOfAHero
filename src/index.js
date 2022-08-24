@@ -20,6 +20,7 @@
 var isWriting = false;
 var nextFunction = null;
 var recentActions = [];
+var isPlacingBuilding = false;
 
 function setNextFunction(functionName) {
     nextFunction = functionName;
@@ -252,7 +253,6 @@ function pluralize(count, noun){
   }
 
 function write(text) {
-//let text = document.getElementById("inputTextBox").innerHTML;
     if(isWriting) return;
     isWriting = true;
     var i = 0;
@@ -312,6 +312,9 @@ function init(){
 
     //debug
     //food = 50;
+    wood = 400;
+    stone = 400;
+    iron = 100;
 
     idleVillagers = 4;
     farmers = 1;
@@ -367,6 +370,23 @@ function init(){
 
 function processInput(){
     if(isWriting) return;
+
+    if(isPlacingBuilding){
+        switch(document.getElementById('inputTextBox').value) {
+            case 'c':
+                write("Cancelled build.^^What would you like to do next?");
+                setCurrentElement(0);
+                console.log(currentElement);
+                document.getElementById('inputTextBox').value = "";
+                isPlacingBuilding = false;
+                nextFunction = null;
+            break;
+            default:
+                write("Please place your " + buildItem.name + " before continuing. Press 'c' to cancel.");
+                document.getElementById('inputTextBox').value = "";
+                return;
+            }
+    }
 
     if(nextFunction) {
         nextFunction();
@@ -631,6 +651,7 @@ function processBuilding(){
             buildItem = {
                 name: "blacksmith",
                 variable: "blacksmithLevel",
+                imageId: 11,
                 woodCost: 50,
                 stoneCost: 75,
                 ironCost: 10,
@@ -641,6 +662,7 @@ function processBuilding(){
             buildItem = {
                 name: "barracks",
                 variable: "barracksLevel",
+                imageId: 13 + barracksLevel,
                 woodCost: 75,
                 stoneCost: 50,
                 ironCost: 5,
@@ -651,6 +673,7 @@ function processBuilding(){
             buildItem = {
                 name: "small house",
                 variable: "smallHouse",
+                imageId: 2,
                 woodCost: 75,
                 stoneCost: 50,
                 ironCost: 0,
@@ -661,6 +684,7 @@ function processBuilding(){
             buildItem = {
                 name: "large house",
                 variable: "largeHouse",
+                imageId: 19,
                 woodCost: 125,
                 stoneCost: 75,
                 ironCost: 0,
@@ -671,6 +695,7 @@ function processBuilding(){
             buildItem = {
                 name: "market",
                 variable: "market",
+                imageId: 5,
                 woodCost: 150,
                 stoneCost: 100,
                 ironCost: 0,
@@ -681,6 +706,7 @@ function processBuilding(){
             buildItem = {
                 name: "stable",
                 variable: "stable",
+                imageId: 3,
                 woodCost: 150,
                 stoneCost: 50,
                 ironCost: 10,
@@ -720,17 +746,37 @@ function processBuilding(){
     if(buildItem.buildTime + time > 64) buildMessage += "You don't have enough time to build a " + buildItem.name + ".^^";
 
     if(!buildMessage) {
-        wood -= buildItem.woodCost;
+        /*wood -= buildItem.woodCost;
         stone -= buildItem.stoneCost;
         iron -= buildItem.ironCost;
         time += buildItem.buildTime;
-        window[buildItem.variable]++;
-        buildMessage += "You have built a " + buildItem.name + ".^^";
+        window[buildItem.variable]++;*/
+        buildMessage += "Place your " + buildItem.name + " on the map to continue.";
+        write(buildMessage);
+
+        setCurrentElement(buildItem.imageId);
+        isPlacingBuilding = true;
+        document.getElementById('inputTextBox').value = "";
+        return;
     }
 
     updateResources();
     buildMessage += "What would you like to do next?";
     write(buildMessage);
+    nextFunction = null;
+    document.getElementById('inputTextBox').value = "";
+}
+
+function placeBuilding(){
+    wood -= buildItem.woodCost;
+    stone -= buildItem.stoneCost;
+    iron -= buildItem.ironCost;
+    time += buildItem.buildTime;
+    window[buildItem.variable]++;
+
+    isPlacingBuilding = false;
+    updateResources();
+    write("Successfully built a " + buildItem.name + ".^^What would you like to do next?");
     nextFunction = null;
     document.getElementById('inputTextBox').value = "";
 }

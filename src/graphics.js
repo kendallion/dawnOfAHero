@@ -121,11 +121,10 @@ function drawBoard(){
     }
 }
 
-drawBoard();
+//drawBoard();
 
 c.addEventListener('mousedown', function(e) {
     addMapElement(c, e)
-    console.log("x: " + e.clientX + "\ny: " + e.clientY);
 });
 
 var map = [
@@ -145,7 +144,7 @@ var map = [
 
 function renderMap(){
     ctx.clearRect(0,0,1408,768);
-    drawBoard();
+    //drawBoard();
     for(var x=0;x<map[0].length;x++){
         for(var y=0;y<map.length;y++){
             if(map[y][x] == 1){
@@ -213,31 +212,43 @@ function drawOpaque(image, x, y) {
     ctx.drawImage(image, x*64, y*64);
     ctx.globalAlpha = 1.0;
 }
+
 function setCurrentElement(id) {
     currentElement = id;
-    if(id > 9 && id < 100) twoWide = true;
+    if(id == 0){
+        for(var x=0;x<map[0].length;x++){
+            for(var y=0;y<map.length;y++){
+                console.log(map[y][x]);
+                if(map[y][x] >= 100) map[y][x] = 0;
+            }
+        }
+        renderMap();
+    }
+    else if(id > 9 && id < 100) twoWide = true;
     else twoWide = false;
 }
+
 function addMapElement(canvas, event) {
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * canvas.width / canvas.clientWidth;
     const y = (event.clientY - rect.top) * canvas.height / canvas.clientHeight;
-    console.log("New x: " + x + "\nNew y: " + y);
-    if(!twoWide && map[Math.floor(y/64)][Math.floor(x/64)] >= 100){
+    if(!twoWide && map[Math.floor(y/64)][Math.floor(x/64)] >= 100) {
         map[Math.floor(y/64)][Math.floor(x/64)] = currentElement;
         currentElement = 0;
         tempX = null;
         tempY = null;
+        placeBuilding();
     }
     else if(twoWide &&
             map[Math.floor(y/64)][Math.floor(x/64)] >= 100 &&
-            map[Math.floor(y/64)][Math.floor(x/64) + 1] >= 100){
+            map[Math.floor(y/64)][Math.floor(x/64) + 1] >= 100) {
         map[Math.floor(y/64)][Math.floor(x/64)] = currentElement;
         map[Math.floor(y/64)][Math.floor(x/64) + 1] = currentElement + 1;
         currentElement = 0;
         tempX = null;
         tempY = null;
         twoWide = null;
+        placeBuilding();
     }
     else if(currentElement == 0){
         map[Math.floor(y/64)][Math.floor(x/64)] = 1;
